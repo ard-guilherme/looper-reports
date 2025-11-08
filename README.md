@@ -47,11 +47,17 @@ looper-reports/
 
 1.  **Requisição:** Um cliente envia uma requisição `POST` para o endpoint `/api/v1/reports/generate/{student_id}`.
 2.  **API Endpoint:** O endpoint em `app/api/v1/endpoints/reports.py` recebe a chamada. Usando injeção de dependência, ele obtém uma sessão de banco de dados e chama o `ReportService`.
-3.  **Busca de Dados (Service):** O `ReportService` (`app/services/report_service.py`) busca os dados do aluno no banco de dados `mario_bot_db`, consultando as coleções `students`, `checkins` e `macro_goals` de forma assíncrona.
+3.  **Busca de Dados (Service):** O `ReportService` (`app/services/report_service.py`) busca os dados do aluno no banco de dados `mario_bot_db`, consultando de forma assíncrona as seguintes coleções:
+    - `students` (perfil do aluno)
+    - `checkins` (check-ins recentes)
+    - `macro_goals` (metas de macronutrientes)
+    - `bioimpedancias` (dados de bioimpedância)
+    - `relatorios` (os 2 últimos relatórios gerados para o aluno)
 4.  **Invocação do Agent (Service):** O serviço agrupa os dados coletados em um dicionário e os passa para o `ReportGeneratorAgent`.
-5.  **Geração de Conteúdo (Agent):** O `ReportGeneratorAgent` (`app/agents/report_generator_agent.py`) insere os dados no `PromptTemplate` (carregado da variável de ambiente `REPORT_PROMPT`), envia a requisição para a API do Gemini via LangChain e obtém a resposta em formato Markdown.
+5.  **Geração de Conteúdo (Agent):** O `ReportGeneratorAgent` (`app/agents/report_generator_agent.py`) insere os dados nos respectivos placeholders do `PromptTemplate` (carregado da variável de ambiente `REPORT_PROMPT`), envia a requisição para a API do Gemini via LangChain e obtém a resposta em formato Markdown.
 6.  **Renderização de HTML (Service):** O `ReportService` converte o Markdown recebido para HTML e o renderiza dentro do template `report_template.html` usando Jinja2.
-7.  **Resposta:** O endpoint da API retorna a `HTMLResponse` com o relatório finalizado para o cliente.
+7.  **Salvamento do Relatório (Service):** O serviço cria um novo documento com o ID do aluno, a data de geração e o conteúdo HTML final, e o **salva na coleção `relatorios`** do banco de dados.
+8.  **Resposta:** O endpoint da API retorna a `HTMLResponse` com o relatório recém-gerado para o cliente.
 
 ## 2. Guia de Uso e Instalação
 
@@ -86,7 +92,7 @@ looper-reports/
       - `MONGO_CONNECTION_STRING`: A string de conexão completa para o seu banco de dados MongoDB.
       - `GEMINI_API_KEY`: Sua chave de API do Google Gemini.
       - `MONGO_DB_NAME`: O nome do banco de dados a ser utilizado (ex: `mario_bot_db`).
-      - `REPORT_PROMPT`: O template do prompt que o agent de IA usará para gerar os relatórios.
+      - `REPORT_PROMPT`: O template do prompt que o agent de IA usará. Deve conter os placeholders `{student_profile}`, `{checkins}`, `{macro_goals}`, `{bioimpedance_data}` e `{past_reports}`.
 
 ### 2.2. Como Executar a Aplicação
 
