@@ -27,7 +27,7 @@ async def generate_report_content(student_data: Dict[str, Any]) -> str:
         The generated report content as a string.
     """
     # Initialize the language model
-    llm = ChatGoogleGenerativeAI(model="gemini-pro", google_api_key=settings.GEMINI_API_KEY)
+    llm = ChatGoogleGenerativeAI(model="gemini-1.5-pro", google_api_key=settings.GEMINI_API_KEY)
 
     # Create the prompt template from the environment variable
     prompt = PromptTemplate(
