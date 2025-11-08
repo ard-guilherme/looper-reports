@@ -1,4 +1,5 @@
 import json
+import logging
 from typing import Dict, Any
 from bson import ObjectId
 from datetime import datetime
@@ -9,6 +10,8 @@ from langchain_google_genai import ChatGoogleGenerativeAI
 
 from app.core.config import settings
 
+logger = logging.getLogger(__name__)
+
 def json_serializer(obj):
     """Custom JSON serializer for objects not serializable by default json code"""
     if isinstance(obj, (datetime, ObjectId)):
@@ -18,14 +21,8 @@ def json_serializer(obj):
 async def generate_report_content(student_data: Dict[str, Any]) -> str:
     """
     Generates a fitness report for a student using the Gemini model.
-
-    Args:
-        student_data: A dictionary containing the student's data, with keys like
-                      'student_profile', 'checkins', and 'macro_goals'.
-
-    Returns:
-        The generated report content as a string.
     """
+    logger.info("Initializing LLM and prompt template.")
     # Initialize the language model
     llm = ChatGoogleGenerativeAI(model="gemini-1.5-pro", google_api_key=settings.GEMINI_API_KEY)
 
@@ -43,8 +40,10 @@ async def generate_report_content(student_data: Dict[str, Any]) -> str:
         key: json.dumps(value, indent=2, ensure_ascii=False, default=json_serializer)
         for key, value in student_data.items()
     }
+    logger.debug("Invoking LLM chain with formatted inputs.")
 
     # Invoke the chain asynchronously
     report = await chain.ainvoke(formatted_inputs)
+    logger.info("LLM chain invocation complete.")
 
     return report

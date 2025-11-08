@@ -8,6 +8,7 @@ class Settings(BaseSettings):
     GEMINI_API_KEY: str
     REPORT_PROMPT: str
     MONGO_DB_NAME: str = "mario_bot_db"
+    LOG_LEVEL: str = "INFO"
     API_V1_STR: str = "/api/v1"
 
 settings = Settings()

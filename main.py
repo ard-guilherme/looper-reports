@@ -7,10 +7,12 @@ from fastapi import FastAPI
 from app.core.config import settings
 from app.api.v1.router import api_router
 from app.db.session import connect_to_mongo, close_mongo_connection
+from app.core.logging_config import setup_logging
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     # Startup
+    setup_logging()
     await connect_to_mongo()
     yield
     # Shutdown
