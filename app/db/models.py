@@ -1,5 +1,6 @@
 from pydantic import BaseModel, Field
 from typing import Dict, Any
+from datetime import datetime
 
 class StudentModel(BaseModel):
     id: str = Field(..., alias="_id")
@@ -21,3 +22,15 @@ class StudentModel(BaseModel):
                 }
             }
         }
+
+class BioimpedanceModel(BaseModel):
+    id: str = Field(..., alias="_id")
+    student_id: str
+    date: datetime
+    data: Dict[str, Any]
+
+class ReportModel(BaseModel):
+    id: str = Field(..., alias="_id")
+    student_id: str
+    generated_at: datetime = Field(default_factory=datetime.utcnow)
+    html_content: str

@@ -24,7 +24,7 @@ async def generate_report_content(student_data: Dict[str, Any]) -> str:
     # Create the prompt template from the environment variable
     prompt = PromptTemplate(
         template=settings.REPORT_PROMPT,
-        input_variables=["student_profile", "checkins", "macro_goals"],
+        input_variables=["student_profile", "checkins", "macro_goals", "bioimpedance_data", "past_reports"],
     )
 
     # Define the generation chain
@@ -35,6 +35,8 @@ async def generate_report_content(student_data: Dict[str, Any]) -> str:
         "student_profile": json.dumps(student_data.get("student_profile", {}), indent=2, ensure_ascii=False),
         "checkins": json.dumps(student_data.get("checkins", []), indent=2, ensure_ascii=False),
         "macro_goals": json.dumps(student_data.get("macro_goals", []), indent=2, ensure_ascii=False),
+        "bioimpedance_data": json.dumps(student_data.get("bioimpedance_data", []), indent=2, ensure_ascii=False),
+        "past_reports": json.dumps(student_data.get("past_reports", []), indent=2, ensure_ascii=False),
     }
 
     # Invoke the chain asynchronously
