@@ -1,21 +1,20 @@
-from motor.motor_asyncio import AsyncIOMotorClient
+from motor.motor_asyncio import AsyncIOMotorClient, AsyncIOMotorDatabase
 from app.core.config import settings
 
-class MongoClient:
-    client: AsyncIOMotorClient = None
-    db = None
+client: AsyncIOMotorClient = None
 
-    async def connect(self):
-        self.client = AsyncIOMotorClient(settings.MONGO_CONNECTION_STRING)
-        self.db = self.client.get_database()
-        print("Connected to MongoDB...")
+async def get_database() -> AsyncIOMotorDatabase:
+    if client is None:
+        raise Exception("MongoDB client not initialized. Make sure to call connect_to_mongo on startup.")
+    return client.get_database()
 
-    async def close(self):
-        if self.client:
-            self.client.close()
-            print("MongoDB connection closed.")
+async def connect_to_mongo():
+    global client
+    client = AsyncIOMotorClient(settings.MONGO_CONNECTION_STRING)
+    print("Connected to MongoDB...")
 
-mongodb_client = MongoClient()
-
-async def get_database():
-    return mongodb_client.db
+async def close_mongo_connection():
+    global client
+    if client:
+        client.close()
+        print("MongoDB connection closed.")
