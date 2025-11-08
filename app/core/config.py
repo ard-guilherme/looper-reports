@@ -4,6 +4,7 @@ class Settings(BaseSettings):
     PROJECT_NAME: str = "Looper Reports AI"
     MONGO_CONNECTION_STRING: str
     GEMINI_API_KEY: str
+    REPORT_PROMPT: str
     API_V1_STR: str = "/api/v1"
 
     class Config:
