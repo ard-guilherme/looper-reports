@@ -1,11 +1,19 @@
 import json
 from typing import Dict, Any
+from bson import ObjectId
+from datetime import datetime
 
 from langchain_core.output_parsers import StrOutputParser
 from langchain_core.prompts import PromptTemplate
 from langchain_google_genai import ChatGoogleGenerativeAI
 
 from app.core.config import settings
+
+def json_serializer(obj):
+    """Custom JSON serializer for objects not serializable by default json code"""
+    if isinstance(obj, (datetime, ObjectId)):
+        return str(obj)
+    raise TypeError(f"Type {type(obj)} not serializable")
 
 async def generate_report_content(student_data: Dict[str, Any]) -> str:
     """
@@ -32,11 +40,8 @@ async def generate_report_content(student_data: Dict[str, Any]) -> str:
 
     # Format each part of the student data for the prompt
     formatted_inputs = {
-        "student_profile": json.dumps(student_data.get("student_profile", {}), indent=2, ensure_ascii=False),
-        "checkins": json.dumps(student_data.get("checkins", []), indent=2, ensure_ascii=False),
-        "macro_goals": json.dumps(student_data.get("macro_goals", []), indent=2, ensure_ascii=False),
-        "bioimpedance_data": json.dumps(student_data.get("bioimpedance_data", []), indent=2, ensure_ascii=False),
-        "past_reports": json.dumps(student_data.get("past_reports", []), indent=2, ensure_ascii=False),
+        key: json.dumps(value, indent=2, ensure_ascii=False, default=json_serializer)
+        for key, value in student_data.items()
     }
 
     # Invoke the chain asynchronously
