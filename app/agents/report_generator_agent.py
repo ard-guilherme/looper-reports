@@ -26,9 +26,17 @@ async def generate_report_content(student_data: Dict[str, Any]) -> str:
     # Initialize the language model
     llm = ChatGoogleGenerativeAI(model="gemini-1.5-pro", google_api_key=settings.GEMINI_API_KEY)
 
+    # Read prompt template from file
+    try:
+        with open(settings.REPORT_PROMPT_FILE, "r", encoding="utf-8") as f:
+            prompt_template_content = f.read()
+    except FileNotFoundError:
+        logger.error(f"Prompt file not found: {settings.REPORT_PROMPT_FILE}")
+        raise
+
     # Create the prompt template from the environment variable
     prompt = PromptTemplate(
-        template=settings.REPORT_PROMPT,
+        template=prompt_template_content,
         input_variables=["student_profile", "checkins", "macro_goals", "bioimpedance_data", "past_reports"],
     )
 

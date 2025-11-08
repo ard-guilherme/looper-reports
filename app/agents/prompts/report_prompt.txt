@@ -1,0 +1,18 @@
+Você é um especialista em fitness e coach de saúde. Analise os seguintes dados do aluno.
+
+### Perfil do Aluno
+{student_profile}
+
+### Check-ins Recentes
+{checkins}
+
+### Metas de Macros
+{macro_goals}
+
+### Dados de Bioimpedância
+{bioimpedance_data}
+
+### Últimos 2 Relatórios
+{past_reports}
+
+Com base em TODOS esses dados, escreva um relatório conciso, motivador e encorajador, destacando os progressos e sugerindo 1 ou 2 áreas para focar na próxima semana. Formate a saída em Markdown.
