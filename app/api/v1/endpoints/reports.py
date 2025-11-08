@@ -1,11 +1,17 @@
 from fastapi import APIRouter, Depends
 from motor.motor_asyncio import AsyncIOMotorDatabase
 from app.db.session import get_database
+from app.services.report_service import create_report_for_student
 
 router = APIRouter()
 
-@router.post("/generate/{student_id}")
-async def generate_report(student_id: str, db: AsyncIOMotorDatabase = Depends(get_database)):
-    # Exemplo de como acessaríamos a coleção de alunos
-    # student = await db["students"].find_one({"_id": student_id})
-    return {"message": f"Report generation requested for student ID: {student_id} using DB: {db.name}"}
+@router.post("/generate/{student_id}", response_model=str)
+async def generate_report(
+    student_id: str, 
+    db: AsyncIOMotorDatabase = Depends(get_database)
+) -> str:
+    """
+    Generates a fitness report for a given student ID.
+    """
+    report_content = await create_report_for_student(student_id=student_id, db=db)
+    return report_content
