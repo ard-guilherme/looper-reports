@@ -7,3 +7,9 @@ langchain
 langchain-google-genai
 jinja2
 markdown
+
+# Test dependencies
+pytest
+pytest-asyncio
+httpx
+pydantic-settings
