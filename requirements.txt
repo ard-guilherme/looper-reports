@@ -14,3 +14,4 @@ pytest-asyncio
 httpx
 pydantic-settings
 beautifulsoup4
+numpy

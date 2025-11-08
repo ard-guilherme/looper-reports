@@ -46,17 +46,19 @@ looper-reports/
 ### 1.4. Fluxo de Geração de Relatório (End-to-End)
 
 1.  **Requisição:** Um cliente envia uma requisição `POST` para o endpoint `/api/v1/reports/generate/{student_id}`.
-2.  **API Endpoint:** O endpoint em `app/api/v1/endpoints/reports.py` recebe a chamada. Usando injeção de dependência, ele obtém uma sessão de banco de dados e chama o `ReportService`.
-3.  **Busca de Dados (Service):** O `ReportService` (`app/services/report_service.py`) busca os dados do aluno no banco de dados `mario_bot_db`, consultando de forma assíncrona as seguintes coleções:
-    - `students` (perfil do aluno)
-    - `checkins` (check-ins recentes)
-    - `macro_goals` (metas de macronutrientes)
-    - `bioimpedancias` (dados de bioimpedância)
-    - `relatorios` (os 2 últimos relatórios gerados para o aluno)
-4.  **Invocação do Agent (Service):** O serviço agrupa os dados coletados em um dicionário e os passa para o `ReportGeneratorAgent`.
-5.  **Geração de Conteúdo (Agent):** O `ReportGeneratorAgent` (`app/agents/report_generator_agent.py`) insere os dados nos respectivos placeholders do `PromptTemplate` (carregado da variável de ambiente `REPORT_PROMPT`), envia a requisição para a API do Gemini via LangChain e obtém a resposta em formato Markdown.
-6.  **Renderização de HTML (Service):** O `ReportService` converte o Markdown recebido para HTML e o renderiza dentro do template `report_template.html` usando Jinja2.
-7.  **Salvamento do Relatório (Service):** O serviço cria um novo documento com o ID do aluno, a data de geração e o conteúdo HTML final, e o **salva na coleção `relatorios`** do banco de dados.
+2.  **API Endpoint:** O endpoint em `app/api/v1/endpoints/reports.py` recebe a chamada e, usando injeção de dependência, invoca o `ReportService`.
+3.  **Busca de Dados (Service):** O `ReportService` (`app/services/report_service.py`) busca os dados do aluno no banco de dados `mario_bot_db`:
+    - Busca o perfil do aluno na coleção `students`.
+    - Busca os **check-ins dos últimos 7 dias** na coleção `checkins`. Estes documentos são a fonte principal para dados diários de treino, sono e nutrição.
+    - Busca os 2 últimos relatórios na coleção `relatorios` para extrair dados comparativos da semana anterior.
+4.  **Formatação do Prompt (Service):** Esta é uma etapa crucial. O serviço processa os dados brutos para montar uma única string de texto que servirá de contexto para o LLM:
+    - **Dados de Treino:** A função `_parse_training_journal` lê a string `training_journal` de cada check-in, extrai os exercícios e séries, e os formata.
+    - **Dados de Nutrição e Sono:** Funções auxiliares extraem os dados de `nutrition` e `sleep` de cada check-in e os formatam.
+    - **Dados da Semana Anterior:** A função `_format_previous_week_data` usa a biblioteca **BeautifulSoup** para parsear o conteúdo HTML do relatório mais recente e extrair as métricas de comparação (calorias, volume de treino, etc.).
+    - Todos os dados formatados são inseridos em uma estrutura de texto definida pelo `prompt_template.txt`.
+5.  **Invocação do Agent (Service):** O serviço passa a string do prompt, agora rica em contexto, para o `ReportGeneratorAgent`.
+6.  **Geração de Conteúdo (Agent):** O `ReportGeneratorAgent` (`app/agents/report_generator_agent.py`) insere a string no `PromptTemplate` (carregado de `app/agents/prompts/report_prompt.txt`), envia a requisição para a API do Gemini e instrui o modelo a gerar o **HTML completo e final** do relatório, já com todos os placeholders preenchidos.
+7.  **Salvamento do Relatório (Service):** O serviço cria um novo documento com o ID do aluno, a data de geração e o conteúdo HTML final recebido do agent, e o **salva na coleção `relatorios`**.
 8.  **Resposta:** O endpoint da API retorna a `HTMLResponse` com o relatório recém-gerado para o cliente.
 
 ## 2. Guia de Uso e Instalação
