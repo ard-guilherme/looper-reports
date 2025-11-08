@@ -61,7 +61,27 @@ looper-reports/
 
 ## 2. Guia de Uso e Instalação
 
-### 2.1. Configuração do Ambiente
+### 2.1. Executando com Docker (Recomendado)
+
+**Pré-requisitos:**
+- Docker e Docker Compose
+
+1.  **Configure as variáveis de ambiente:**
+    - Crie um arquivo `.env` na raiz do projeto.
+    - Preencha as variáveis, especialmente `GEMINI_API_KEY`. A `MONGO_CONNECTION_STRING` já está pré-configurada para o ambiente Docker.
+
+2.  **Execute o script de deploy:**
+    ```bash
+    ./deploy.sh
+    ```
+    Isso irá construir as imagens e iniciar os containers da API e do banco de dados em background.
+
+3.  **Para parar os containers:**
+    ```bash
+    docker-compose down
+    ```
+
+### 2.2. Executando Localmente (Sem Docker)
 
 **Pré-requisitos:**
 - Python 3.10+
@@ -87,22 +107,7 @@ looper-reports/
     ```
 
 4.  **Configure as variáveis de ambiente:**
-    - Crie um arquivo `.env` na raiz do projeto.
-    - Preencha as seguintes variáveis no arquivo `.env`:
-      - `MONGO_CONNECTION_STRING`: A string de conexão completa para o seu banco de dados MongoDB.
-      - `GEMINI_API_KEY`: Sua chave de API do Google Gemini.
-      - `MONGO_DB_NAME`: O nome do banco de dados a ser utilizado (ex: `mario_bot_db`).
-      - `REPORT_PROMPT`: O template do prompt que o agent de IA usará. Deve conter os placeholders `{student_profile}`, `{checkins}`, `{macro_goals}`, `{bioimpedance_data}` e `{past_reports}`.
-
-### 2.2. Como Executar a Aplicação
-
-Use o Uvicorn para iniciar o servidor FastAPI:
-
-```bash
-uvicorn main:app --reload
-```
-
-A API estará disponível em `http://127.0.0.1:8000`.
+    - Crie um arquivo `.env` e preencha as variáveis. Para rodar localmente, a `MONGO_CONNECTION_STRING` deve apontar para o seu MongoDB (ex: `mongodb://localhost:27017/looper_db`).
 
 ### 2.3. Como Usar
 
