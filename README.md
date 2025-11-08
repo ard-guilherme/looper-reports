@@ -68,15 +68,15 @@ looper-reports/
 
 1.  **Configure as variáveis de ambiente:**
     - Crie um arquivo `.env` na raiz do projeto.
-    - Preencha as variáveis, especialmente `GEMINI_API_KEY`. A `MONGO_CONNECTION_STRING` já está pré-configurada para o ambiente Docker.
+    - Preencha as variáveis, especialmente `GEMINI_API_KEY` e `MONGO_CONNECTION_STRING` (que deve apontar para o seu MongoDB Atlas).
 
 2.  **Execute o script de deploy:**
     ```bash
     ./deploy.sh
     ```
-    Isso irá construir as imagens e iniciar os containers da API e do banco de dados em background.
+    Isso irá construir a imagem da API e iniciar o container em background.
 
-3.  **Para parar os containers:**
+3.  **Para parar o container:**
     ```bash
     docker-compose down
     ```
@@ -86,7 +86,7 @@ looper-reports/
 **Pré-requisitos:**
 - Python 3.10+
 - Git
-- Uma instância do MongoDB acessível
+- Uma instância do MongoDB acessível (local ou Atlas)
 
 1.  **Clone o repositório:**
     ```bash
@@ -107,7 +107,7 @@ looper-reports/
     ```
 
 4.  **Configure as variáveis de ambiente:**
-    - Crie um arquivo `.env` e preencha as variáveis. Para rodar localmente, a `MONGO_CONNECTION_STRING` deve apontar para o seu MongoDB (ex: `mongodb://localhost:27017/looper_db`).
+    - Crie um arquivo `.env` e preencha as variáveis. A `MONGO_CONNECTION_STRING` deve apontar para o seu MongoDB (ex: `mongodb://localhost:27017/looper_db` ou sua string do Atlas).
 
 ### 2.3. Como Usar
 
