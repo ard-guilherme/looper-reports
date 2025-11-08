@@ -1,6 +1,7 @@
 import markdown
 from bson import ObjectId
-from datetime import datetime
+from datetime import datetime, UTC
+
 from fastapi import HTTPException
 from jinja2 import Environment, FileSystemLoader
 from motor.motor_asyncio import AsyncIOMotorDatabase
@@ -62,7 +63,7 @@ async def create_report_for_student(student_id: str, db: AsyncIOMotorDatabase) -
     # --- 3. Save the newly generated report to the database ---
     new_report = {
         "student_id": student_obj_id,
-        "generated_at": datetime.utcnow(),
+        "generated_at": datetime.now(UTC),
         "html_content": final_html_output
     }
     await db["relatorios"].insert_one(new_report)
