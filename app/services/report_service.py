@@ -26,13 +26,25 @@ async def create_report_for_student(student_id: str, db: AsyncIOMotorDatabase) -
     if not student_data:
         raise HTTPException(status_code=404, detail=f"Student with ID {student_id} not found")
 
-    # Validate data with Pydantic model
-    try:
-        student = StudentModel(**student_data)
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Data validation error for student {student_id}: {e}")
+    # Fetch check-ins data
+    checkins_data = await db["checkins"].find({"student_id": ObjectId(student_id)}).to_list(length=None)
+
+    # Fetch macro goals data
+    macro_goals_data = await db["macro_goals"].find({"student_id": ObjectId(student_id)}).to_list(length=None)
+
+    # Combine all data into a single dictionary for the agent
+    full_student_data = {
+        "student_profile": student_data,
+        "checkins": checkins_data,
+        "macro_goals": macro_goals_data,
+        # Add other data sources here as they become available
+    }
+
+    # Validate data with Pydantic model (optional, depending on how strict we want to be with combined data)
+    # For now, we'll pass the raw combined data to the agent, assuming it can handle the structure.
+    # If we want to validate, we'd need a more complex Pydantic model for the full_student_data.
 
     # Generate the report content by calling the agent
-    report_content = await generate_report_content(student.model_dump(by_alias=True))
+    report_content = await generate_report_content(full_student_data)
 
     return report_content

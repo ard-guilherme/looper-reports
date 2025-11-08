@@ -6,7 +6,7 @@ client: AsyncIOMotorClient = None
 async def get_database() -> AsyncIOMotorDatabase:
     if client is None:
         raise Exception("MongoDB client not initialized. Make sure to call connect_to_mongo on startup.")
-    return client.get_database()
+    return client.get_database(settings.MONGO_DB_NAME)
 
 async def connect_to_mongo():
     global client
