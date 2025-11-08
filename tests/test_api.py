@@ -22,12 +22,12 @@ async def test_generate_report_success():
     
     # Mock a função do serviço diretamente, já que a dependência do DB já foi mockada
     with patch("app.api.v1.endpoints.reports.create_report_for_student", new_callable=AsyncMock) as mock_create_report:
-        mock_create_report.return_value = "<html><body><h1>Test Report</h1></body></html>"
+        mock_create_report.return_value = "<html><body><h1>Generated Report</h1></body></html>"
 
         response = client.post(f"/api/v1/reports/generate/{student_id}")
 
         assert response.status_code == 200
-        assert "<html><body><h1>Test Report</h1></body></html>" in response.text
+        assert "<html><body><h1>Generated Report</h1></body></html>" in response.text
         mock_create_report.assert_called_once()
 
 @pytest.mark.asyncio

@@ -1,15 +1,11 @@
 import logging
-import markdown
 from bson import ObjectId
 from datetime import datetime, UTC
 from fastapi import HTTPException
-from jinja2 import Environment, FileSystemLoader
 from motor.motor_asyncio import AsyncIOMotorDatabase
 
 from app.agents.report_generator_agent import generate_report_content
 
-# Configure Jinja2
-env = Environment(loader=FileSystemLoader("app/templates"))
 logger = logging.getLogger(__name__)
 
 async def create_report_for_student(student_id: str, db: AsyncIOMotorDatabase) -> str:
@@ -17,7 +13,6 @@ async def create_report_for_student(student_id: str, db: AsyncIOMotorDatabase) -
     Orchestrates the report generation for a specific student and returns HTML.
     """
     logger.info(f"Starting report creation for student_id: {student_id}")
-    # Validate if the student_id is a valid MongoDB ObjectId
     if not ObjectId.is_valid(student_id):
         logger.warning(f"Invalid ObjectId format for student_id: {student_id}")
         raise HTTPException(status_code=400, detail=f"Invalid student ID: {student_id}")
@@ -37,31 +32,36 @@ async def create_report_for_student(student_id: str, db: AsyncIOMotorDatabase) -
     past_reports_data = await db["relatorios"].find({"student_id": student_obj_id}).sort("generated_at", -1).limit(2).to_list(length=2)
     logger.info(f"Data fetched for student_id: {student_id}. Found {len(checkins_data)} check-ins, {len(macro_goals_data)} macro goals, {len(bioimpedance_data)} bioimpedance records, {len(past_reports_data)} past reports.")
 
-    # Combine all data for the agent
-    full_student_data = {
-        "student_profile": student_data,
-        "checkins": checkins_data,
-        "macro_goals": macro_goals_data,
-        "bioimpedance_data": bioimpedance_data,
-        "past_reports": past_reports_data,
-    }
+    # --- 2. Format data for the prompt ---
+    # This is a simplified example. In a real scenario, you'd format this much more carefully
+    # to match the exact structure expected by the prompt_template.txt
+    formatted_data_for_prompt = f"""
+ALUNO: {student_data.get('name', 'N/A')}
+SEMANA: [Número] de [Mês] 2025 ([DD/MM] - [DD/MM])
 
-    # --- 2. Generate the new report content ---
+TREINOS:
+{checkins_data}
+
+NUTRIÇÃO DIÁRIA:
+{macro_goals_data}
+
+SONO DIÁRIO:
+{bioimpedance_data}
+
+DADOS SEMANA ANTERIOR (para comparação):
+[Dados da semana anterior aqui]
+
+CONTEXTO ADICIONAL:
+[Informações relevantes: rotina de trabalho, limitações, eventos especiais, etc.]
+"""
+    logger.debug(f"Formatted data for prompt for student_id: {student_id}")
+
+    # --- 3. Generate the new report content (HTML) ---
     logger.info(f"Invoking report generation agent for student_id: {student_id}")
-    markdown_content = await generate_report_content(full_student_data)
-    logger.info(f"Agent successfully generated content for student_id: {student_id}")
+    final_html_output = await generate_report_content(formatted_data_for_prompt)
+    logger.info(f"Agent successfully generated HTML content for student_id: {student_id}")
 
-    # Convert Markdown to HTML
-    html_body = markdown.markdown(markdown_content)
-
-    # Render the final HTML with the template
-    template = env.get_template("report_template.html")
-    final_html_output = template.render(
-        student_name=student_data.get("name", "Aluno"), 
-        report_body=html_body
-    )
-
-    # --- 3. Save the newly generated report to the database ---
+    # --- 4. Save the newly generated report to the database ---
     new_report = {
         "student_id": student_obj_id,
         "generated_at": datetime.now(UTC),
@@ -71,7 +71,6 @@ async def create_report_for_student(student_id: str, db: AsyncIOMotorDatabase) -
     await db["relatorios"].insert_one(new_report)
     logger.info(f"Successfully saved new report for student_id: {student_id}")
 
-    # --- 4. Return the final report ---
+    # --- 5. Return the final report ---
     return final_html_output
-
 

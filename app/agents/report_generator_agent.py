@@ -18,13 +18,19 @@ def json_serializer(obj):
         return str(obj)
     raise TypeError(f"Type {type(obj)} not serializable")
 
-async def generate_report_content(student_data: Dict[str, Any]) -> str:
+async def generate_report_content(user_data_for_prompt: str) -> str:
     """
     Generates a fitness report for a student using the Gemini model.
+
+    Args:
+        user_data_for_prompt: A pre-formatted string containing all student data for the prompt.
+
+    Returns:
+        The generated report content as an HTML string.
     """
     logger.info("Initializing LLM and prompt template.")
     # Initialize the language model
-    llm = ChatGoogleGenerativeAI(model="gemini-2.5-pro", google_api_key=settings.GEMINI_API_KEY)
+    llm = ChatGoogleGenerativeAI(model="gemini-1.5-pro", google_api_key=settings.GEMINI_API_KEY)
 
     # Read prompt template from file
     try:
@@ -34,24 +40,19 @@ async def generate_report_content(student_data: Dict[str, Any]) -> str:
         logger.error(f"Prompt file not found: {settings.REPORT_PROMPT_FILE}")
         raise
 
-    # Create the prompt template from the environment variable
+    # Create the prompt template
     prompt = PromptTemplate(
-        template=prompt_template_content,
-        input_variables=["student_profile", "checkins", "macro_goals", "bioimpedance_data", "past_reports"],
+        template=prompt_template_content + "\n\n" + "DADOS DO ALUNO:\n{user_data_for_prompt}",
+        input_variables=["user_data_for_prompt"],
     )
 
     # Define the generation chain
     chain = prompt | llm | StrOutputParser()
 
-    # Format each part of the student data for the prompt
-    formatted_inputs = {
-        key: json.dumps(value, indent=2, ensure_ascii=False, default=json_serializer)
-        for key, value in student_data.items()
-    }
     logger.debug("Invoking LLM chain with formatted inputs.")
 
     # Invoke the chain asynchronously
-    report = await chain.ainvoke(formatted_inputs)
+    report = await chain.ainvoke({"user_data_for_prompt": user_data_for_prompt})
     logger.info("LLM chain invocation complete.")
 
     return report
