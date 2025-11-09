@@ -37,7 +37,7 @@ def _get_base_context(checkins: list, student: dict, past_reports: list, macro_g
     week_str = f"Semana {week_number} de {month_name} {end_date.year} ({start_date.strftime('%d/%m')} - {end_date.strftime('%d/%m')})"
 
     context = f"""
-ALUNO: {student.get('name', 'N/A')}
+ALUNO: {student.get('full_name', 'N/A')}
 SEMANA: {week_str}
 
 # DADOS BRUTOS DA SEMANA
