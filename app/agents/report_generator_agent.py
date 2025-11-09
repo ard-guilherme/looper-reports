@@ -10,6 +10,7 @@ logger = logging.getLogger(__name__)
 PROMPT_FILES = {
     "overview": "sections/overview_prompt.txt",
     "nutrition_analysis": "sections/nutrition_analysis_prompt.txt",
+    "sleep_analysis": "sections/sleep_analysis_prompt.txt",
 }
 
 async def generate_report_section(section_type: str, context_data: str, temperature: float = 0.7) -> str:

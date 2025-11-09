@@ -156,6 +156,7 @@ async def create_report_for_student(student_id: str, db: AsyncIOMotorDatabase) -
     # --- Generate content for each section ---
     overview_content = await generate_report_section("overview", base_context)
     nutrition_html_content = await _build_nutrition_section(checkins_data, macro_goals_data, past_reports_data, base_context)
+    sleep_html_content = await _build_sleep_analysis_section(checkins_data, base_context)
 
     # --- Load the HTML template ---
     with open(settings.REPORT_TEMPLATE_FILE, "r", encoding="utf-8") as f:
@@ -166,10 +167,10 @@ async def create_report_for_student(student_id: str, db: AsyncIOMotorDatabase) -
     report_html = report_html.replace("{{week_string}}", f"Semana {end_date.isocalendar()[1]} ({start_date.strftime('%d/%m')} - {end_date.strftime('%d/%m')})")
     report_html = report_html.replace("{{overview_section}}", f"<p>{overview_content}</p>")
     report_html = report_html.replace("{{nutrition_analysis_section}}", nutrition_html_content)
+    report_html = report_html.replace("{{sleep_analysis_section}}", sleep_html_content)
     
     # For now, fill other sections with placeholders
     report_html = report_html.replace("{{score_cards}}", "<!-- Score cards to be implemented -->")
-    report_html = report_html.replace("{{sleep_analysis_section}}", "<!-- Sleep analysis to be implemented -->")
     report_html = report_html.replace("{{training_analysis_section}}", "<!-- Training analysis to be implemented -->")
     report_html = report_html.replace("{{detailed_insights_section}}", "<!-- Detailed insights to be implemented -->")
     report_html = report_html.replace("{{recommendations_section}}", "<!-- Recommendations to be implemented -->")
@@ -230,49 +231,49 @@ def _build_main_metrics_grid(avg_cals, avg_prot, avg_carbs, avg_fats, prot_goal,
         perc_diff = (diff / previous) * 100
         color = 'positive' if (diff > 0 and not invert_color) or (diff < 0 and invert_color) else 'critical'
         sign = '+' if diff > 0 else ''
-        return f'<div class="metric-comparison">vs. semana anterior: <span class="{color}">{sign}{diff:.0f} {unit} ({sign}{perc_diff:.1f}%)</span></div>'
+        return f"<div class=\"metric-comparison\">vs. semana anterior: <span class=\"{color}\">{sign}{diff:.0f} {unit} ({sign}{perc_diff:.1f}%)</span></div>"
 
     cal_comp = get_comparison_html(avg_cals, prev_metrics.get('calories', 0), unit='kcal', invert_color=True)
     prot_comp = get_comparison_html(avg_prot, prev_metrics.get('protein', 0), unit='g')
 
     prot_adherence = (avg_prot / prot_goal) * 100 if prot_goal > 0 else 0
 
-    return f"""<div class="metrics-grid">
-        <div class="metric-item">
-            <div class="metric-label">Calorias Médias</div>
-            <div class="metric-value">{avg_cals:.0f} kcal</div>
+    return f"""<div class=\"metrics-grid\">
+        <div class=\"metric-item\">
+            <div class=\"metric-label\">Calorias Médias</div>
+            <div class=\"metric-value\">{avg_cals:.0f} kcal</div>
             {cal_comp}
         </div>
-        <div class="metric-item">
-            <div class="metric-label">Proteína Média</div>
-            <div class="metric-value">{avg_prot:.0f}g</div>
-            <div class="metric-comparison">Meta: {prot_goal:.0f}g | <span class="positive">{prot_adherence:.1f}%</span></div>
+        <div class=\"metric-item\">
+            <div class=\"metric-label\">Proteína Média</div>
+            <div class=\"metric-value\">{avg_prot:.0f}g</div>
+            <div class=\"metric-comparison\">Meta: {prot_goal:.0f}g | <span class=\"positive\">{prot_adherence:.1f}%</span></div>
             {prot_comp}
         </div>
-        <div class="metric-item">
-            <div class="metric-label">Carboidratos Médios</div>
-            <div class="metric-value">{avg_carbs:.0f}g</div>
-            <div class="metric-comparison">{avg_carbs*4/avg_cals*100 if avg_cals > 0 else 0:.0f}% das calorias totais</div>
+        <div class=\"metric-item\">
+            <div class=\"metric-label\">Carboidratos Médios</div>
+            <div class=\"metric-value\">{avg_carbs:.0f}g</div>
+            <div class=\"metric-comparison\">{avg_carbs*4/avg_cals*100 if avg_cals > 0 else 0:.0f}% das calorias totais</div>
         </div>
-        <div class="metric-item">
-            <div class="metric-label">Gordura Média</div>
-            <div class="metric-value">{avg_fats:.0f}g</div>
-            <div class="metric-comparison">{avg_fats*9/avg_cals*100 if avg_cals > 0 else 0:.0f}% das calorias totais</div>
+        <div class=\"metric-item\">
+            <div class=\"metric-label\">Gordura Média</div>
+            <div class=\"metric-value\">{avg_fats:.0f}g</div>
+            <div class=\"metric-comparison\">{avg_fats*9/avg_cals*100 if avg_cals > 0 else 0:.0f}% das calorias totais</div>
         </div>
     </div>"""
 
 def _build_consistency_metrics_grid(cv, days_on_goal, total_days) -> str:
     return f"""<h3>Consistência Nutricional</h3>
-    <div class="metrics-grid">
-        <div class="metric-item">
-            <div class="metric-label">Coeficiente de Variação</div>
-            <div class="metric-value">{cv:.1f}%</div>
-            <div class="metric-comparison"><span class="positive">Excelente consistência</span></div>
+    <div class=\"metrics-grid\">
+        <div class=\"metric-item\">
+            <div class=\"metric-label\">Coeficiente de Variação</div>
+            <div class=\"metric-value\">{cv:.1f}%</div>
+            <div class=\"metric-comparison\"><span class=\"positive\">Excelente consistência</span></div>
         </div>
-        <div class="metric-item">
-            <div class="metric-label">Dias na Meta Proteica</div>
-            <div class="metric-value">{days_on_goal}/{total_days}</div>
-            <div class="metric-comparison"><span class="positive">{days_on_goal/total_days*100 if total_days > 0 else 0:.0f}% de aderência</span></div>
+        <div class=\"metric-item\">
+            <div class=\"metric-label\">Dias na Meta Proteica</div>
+            <div class=\"metric-value\">{days_on_goal}/{total_days}</div>
+            <div class=\"metric-comparison\"><span class=\"positive\">{days_on_goal/total_days*100 if total_days > 0 else 0:.0f}% de aderência</span></div>
         </div>
     </div>"""
 
@@ -287,7 +288,7 @@ def _build_daily_nutrition_table(checkins: list) -> str:
             <td>{n.get('protein', 0)}g</td>
             <td>{n.get('carbs', 0)}g</td>
             <td>{n.get('fat', 0)}g</td>
-            <td><span class="positive">Meta</span></td>
+            <td><span class=\"positive\">Meta</span></td>
         </tr>""")
     
     table_rows = "\n".join(rows)
@@ -316,3 +317,43 @@ def _parse_previous_week_metrics(past_reports: list) -> dict:
     except Exception as e:
         logger.error(f"Error parsing previous report for metrics: {e}")
         return {}
+
+
+async def _build_sleep_analysis_section(checkins: list, base_context_for_llm: str) -> str:
+    """
+    Builds the entire HTML block for the sleep analysis section.
+    """
+    # 1. Build the HTML for the daily table
+    daily_table = _build_daily_sleep_table(checkins)
+
+    # 2. Generate LLM insights
+    llm_insights = await generate_report_section("sleep_analysis", base_context_for_llm)
+
+    # 3. Combine all parts into a single HTML block
+    return f"""{daily_table}
+{llm_insights}"""
+
+def _build_daily_sleep_table(checkins: list) -> str:
+    rows = []
+    for checkin in checkins:
+        date = datetime.fromisoformat(checkin.get("checkin_date")).strftime("%d/%m (%a)")
+        s = checkin.get("sleep", {})
+        status = "Adequado" if s.get('sleep_duration_hours', 0) >= 7 else "Limite inferior"
+        status_class = "positive" if status == "Adequado" else "warning"
+        rows.append(f"""<tr>
+            <td>{date}</td>
+            <td>{s.get('sleep_duration_hours', 0):.1f}h</td>
+            <td>{s.get('sleep_quality_rating', 0)}/5</td>
+            <td>{s.get('sleep_start_time', '--:--')} - {s.get('sleep_end_time', '--:--')}</td>
+            <td><span class=\" {status_class}\">{status}</span></td>
+        </tr>""")
+    
+    table_rows = "\n".join(rows)
+    return f"""<table>
+        <thead>
+            <tr><th>Data</th><th>Duração</th><th>Qualidade</th><th>Horário</th><th>Status</th></tr>
+        </thead>
+        <tbody>
+            {table_rows}
+        </tbody>
+    </table>"""

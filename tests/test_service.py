@@ -89,6 +89,8 @@ async def test_create_report_orchestration_flow():
                 return "Este é o resumo da visão geral gerado pelo LLM."
             elif section_type == "nutrition_analysis":
                 return "<p>Insights de nutrição gerados pelo LLM.</p>"
+            elif section_type == "sleep_analysis":
+                return "<p>Insights de sono gerados pelo LLM.</p>"
             return ""
         
         with patch("app.services.report_service.generate_report_section", new_callable=AsyncMock) as mock_generate_section:
@@ -99,22 +101,25 @@ async def test_create_report_orchestration_flow():
 
             # Assert
             # 1. Check that the correct agents were called
-            assert mock_generate_section.call_count == 2
+            assert mock_generate_section.call_count == 3
             # call_args.args[0] is the section_type
             assert mock_generate_section.call_args_list[0].args[0] == "overview"
             assert mock_generate_section.call_args_list[1].args[0] == "nutrition_analysis"
+            assert mock_generate_section.call_args_list[2].args[0] == "sleep_analysis"
 
             # 2. Check that the template was populated correctly
             assert f"<h1>Relatório para {STUDENT_NAME}</h1>" in final_html
             assert "<div id=\"overview\"><p>Este é o resumo da visão geral gerado pelo LLM.</p></div>" in final_html
             assert "<p>Insights de nutrição gerados pelo LLM.</p>" in final_html
+            assert "<p>Insights de sono gerados pelo LLM.</p>" in final_html
             
-            # 3. Check for structural elements from the nutrition section
+            # 3. Check for structural elements from the nutrition and sleep sections
             assert '<div class="metrics-grid">' in final_html
             assert '<h3>Consistência Nutricional</h3>' in final_html
             assert '<h3>Distribuição Calórica Diária</h3>' in final_html
             assert '<table>' in final_html
-            assert '<td>2500 kcal</td>' in final_html # Check if table is populated
+            assert '<td>2500 kcal</td>' in final_html # Check if nutrition table is populated
+            assert '<td>8.0h</td>' in final_html # Check if sleep table is populated
 
             # 4. Check that other sections are placeholder comments
             assert "<!-- Score cards to be implemented -->" in final_html
