@@ -5,7 +5,7 @@ class Settings(BaseSettings):
 
     PROJECT_NAME: str = "Looper Reports AI"
     MONGO_CONNECTION_STRING: str
-    GEMINI_API_KEY: str = "YOUR_GEMINI_API_KEY"
+    GEMINI_API_KEY: str
     REPORT_TEMPLATE_FILE: str = "app/templates/report_template.html"
     PROMPTS_DIR: str = "app/agents/prompts"
     MONGO_DB_NAME: str = "mario_bot_db"

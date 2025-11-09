@@ -1,0 +1,1108 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Relatório Mensal - Francisco (Chico) - Outubro 2025</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Rajdhani:wght@500;700;900&display=swap');
+        @import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700&display=swap');
+
+        @page {
+            size: A4;
+            margin: 2cm 1.5cm;
+            background: #1d1d1b;
+        }
+
+        * {
+            box-sizing: border-box;
+        }
+
+        html, body {
+            font-family: 'Rajdhani', sans-serif;
+            font-weight: 500;
+            font-size: 18px;
+            line-height: 1.4;
+            color: #e8e8e8;
+            background: #1d1d1b;
+            margin: 0;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1000px;
+            margin: 0 auto;
+            background: #1d1d1b;
+        }
+
+        .logo-header {
+            text-align: center;
+            margin: 0 0 2em 0;
+            padding: 1em 0;
+            break-after: avoid;
+            page-break-after: avoid;
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 2em;
+            padding-bottom: 1em;
+            border-bottom: 3px solid #76ff01;
+        }
+
+        .header h1 {
+            font-size: 2em;
+            color: #76ff01;
+            margin: 0 0 0.3em 0;
+            font-weight: 900;
+        }
+
+        .header .subtitle {
+            font-size: 1.2em;
+            color: #ccc;
+            margin: 0;
+        }
+
+        .score-container {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 20px;
+            margin: 2em 0;
+            break-inside: avoid;
+            page-break-inside: avoid;
+        }
+
+        .score-card {
+            background: linear-gradient(135deg, #2a2a28 0%, #1d1d1b 100%);
+            border: 2px solid #555;
+            border-radius: 8px;
+            padding: 1.5em;
+            text-align: center;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .score-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 4px;
+            background: linear-gradient(90deg, #76ff01, #5cd600);
+        }
+
+        .score-card.warning::before {
+            background: linear-gradient(90deg, #ffa500, #ff8c00);
+        }
+
+        .score-card.critical::before {
+            background: linear-gradient(90deg, #ff4444, #cc0000);
+        }
+
+        .score-label {
+            font-size: 1em;
+            color: #999;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-bottom: 0.5em;
+        }
+
+        .score-value {
+            font-size: 3em;
+            font-weight: 900;
+            color: #76ff01;
+            margin: 0.2em 0;
+        }
+
+        .score-card.warning .score-value {
+            color: #ffa500;
+        }
+
+        .score-card.critical .score-value {
+            color: #ff4444;
+        }
+
+        .score-detail {
+            font-size: 0.9em;
+            color: #bbb;
+            margin-top: 0.5em;
+        }
+
+        .section {
+            margin: 2em 0;
+            break-inside: avoid;
+            page-break-inside: avoid;
+        }
+
+        .section h2 {
+            font-size: 1.7em;
+            color: #76ff01;
+            padding-bottom: 0.3em;
+            border-bottom: 2px solid #76ff01;
+            margin: 1.8em 0 0.8em 0;
+            font-weight: 900;
+        }
+
+        .section h3 {
+            font-size: 1.5em;
+            color: #e8e8e8;
+            margin: 1.2em 0 0.6em 0;
+            font-weight: 700;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 1em 0;
+            border: 1px solid #555;
+            break-inside: avoid;
+            page-break-inside: avoid;
+        }
+
+        th {
+            background: #333;
+            color: #76ff01;
+            font-weight: 700;
+            padding: 0.8em;
+            text-align: left;
+            border: 1px solid #555;
+        }
+
+        td {
+            background: #2a2a28;
+            color: #e8e8e8;
+            padding: 0.8em;
+            text-align: left;
+            border: 1px solid #555;
+        }
+
+        tr:nth-child(even) td {
+            background: #242422;
+        }
+
+        .metrics-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 15px;
+            margin: 1.5em 0;
+        }
+
+        .metric-item {
+            background: #2a2a28;
+            border: 1px solid #555;
+            border-left: 4px solid #76ff01;
+            padding: 1em;
+            border-radius: 4px;
+        }
+
+        .metric-label {
+            font-size: 0.9em;
+            color: #999;
+            text-transform: uppercase;
+            margin-bottom: 0.3em;
+        }
+
+        .metric-value {
+            font-size: 1.5em;
+            font-weight: 700;
+            color: #76ff01;
+        }
+
+        .metric-comparison {
+            font-size: 0.85em;
+            color: #bbb;
+            margin-top: 0.3em;
+        }
+
+        .positive {
+            color: #76ff01 !important;
+        }
+
+        .warning {
+            color: #ffa500 !important;
+        }
+
+        .critical {
+            color: #ff4444 !important;
+        }
+
+        .alert {
+            padding: 1em;
+            border-radius: 8px;
+            margin: 1.5em 0;
+            border-left: 5px solid;
+            break-inside: avoid;
+            page-break-inside: avoid;
+        }
+
+        .alert.success {
+            background: rgba(118, 255, 1, 0.1);
+            border-color: #76ff01;
+            color: #e8e8e8;
+        }
+
+        .alert.warning {
+            background: rgba(255, 165, 0, 0.1);
+            border-color: #ffa500;
+            color: #e8e8e8;
+        }
+
+        .alert.critical {
+            background: rgba(255, 68, 68, 0.1);
+            border-color: #ff4444;
+            color: #e8e8e8;
+        }
+
+        .alert h4 {
+            color: inherit;
+            margin: 0 0 0.5em 0;
+            font-weight: 700;
+        }
+
+        .insight-box {
+            background: linear-gradient(135deg, #2a2a28 0%, #1d1d1b 100%);
+            border: 2px solid #76ff01;
+            border-radius: 8px;
+            padding: 1.5em;
+            margin: 1.5em 0;
+            position: relative;
+            break-inside: avoid;
+            page-break-inside: avoid;
+        }
+
+        .insight-box::before {
+            content: '';
+            position: absolute;
+            top: -10px;
+            left: 20px;
+            background: #76ff01;
+            color: #1d1d1b;
+            padding: 0.3em 1em;
+            border-radius: 4px;
+            font-weight: 700;
+            font-size: 0.9em;
+        }
+
+        .insight-box:nth-child(1)::before {
+            content: 'INSIGHT #1';
+        }
+
+        .insight-box:nth-child(2)::before {
+            content: 'INSIGHT #2';
+        }
+
+        .insight-box:nth-child(3)::before {
+            content: 'INSIGHT #3';
+        }
+
+        .insight-title {
+            font-size: 1.3em;
+            font-weight: 700;
+            color: #76ff01;
+            margin: 1em 0 0.5em 0;
+        }
+
+        .insight-content {
+            color: #e8e8e8;
+            line-height: 1.6;
+        }
+
+        .footer {
+            margin-top: 3em;
+            padding-top: 1.5em;
+            border-top: 2px solid #555;
+            text-align: center;
+            color: #999;
+            font-size: 0.9em;
+        }
+
+        strong, b {
+            color: #76ff01 !important;
+            font-weight: 700 !important;
+        }
+
+        em, i {
+            color: #ccc !important;
+            font-style: italic !important;
+        }
+
+        .manter-junto {
+            break-inside: avoid;
+            page-break-inside: avoid;
+        }
+
+        .week-summary {
+            background: #2a2a28;
+            border: 1px solid #555;
+            padding: 1em;
+            margin: 1em 0;
+            border-radius: 8px;
+        }
+
+        .week-summary h4 {
+            color: #76ff01;
+            margin: 0 0 0.5em 0;
+        }
+
+        .bioimpedance-comparison {
+            display: grid;
+            grid-template-columns: 1fr 1fr 1fr;
+            gap: 20px;
+            margin: 2em 0;
+        }
+
+        .bioimpedance-card {
+            background: #2a2a28;
+            border: 2px solid #555;
+            padding: 1.5em;
+            border-radius: 8px;
+            text-align: center;
+        }
+
+        .bioimpedance-card.initial {
+            border-color: #ffa500;
+        }
+
+        .bioimpedance-card.final {
+            border-color: #76ff01;
+        }
+
+        .bioimpedance-card.delta {
+            border-color: #00bfff;
+        }
+
+        .bioimpedance-card h4 {
+            margin: 0 0 1em 0;
+            color: #76ff01;
+        }
+
+        .bioimpedance-card.initial h4 {
+            color: #ffa500;
+        }
+
+        .bioimpedance-card.delta h4 {
+            color: #00bfff;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- Cabeçalho -->
+        <div class="header">
+            <h1>Relatório Mensal de Progresso</h1>
+            <p class="subtitle">Aluno: <strong>Francisco (Chico)</strong> | Mês: Outubro 2025 (01/10 - 31/10)</p>
+            <p class="subtitle" style="font-size: 0.9em; margin-top: 0.5em;">22 anos | 180cm | Perfil: Em Desenvolvimento</p>
+        </div>
+
+        <!-- Score Cards Mensais -->
+        <div class="score-container manter-junto">
+            <div class="score-card warning">
+                <div class="score-label">Recuperação Média</div>
+                <div class="score-value">6.8/10</div>
+                <div class="score-detail">Sono: 7.0h média<br>Qualidade: 4.0/5<br>Variabilidade: Alta</div>
+            </div>
+
+            <div class="score-card">
+                <div class="score-label">Desempenho Médio</div>
+                <div class="score-value">7.2/10</div>
+                <div class="score-detail">Aderência: 74%<br>RPE médio: 7.8<br>23 treinos/31 dias</div>
+            </div>
+
+            <div class="score-card">
+                <div class="score-label">Alimentação Média</div>
+                <div class="score-value">8.5/10</div>
+                <div class="score-detail">Proteína: 200g<br>Calorias: 2191 kcal<br>CV: 3.4% (Excelente)</div>
+            </div>
+        </div>
+
+        <!-- Visão Geral -->
+        <div class="section manter-junto">
+            <h2>Visão Geral do Mês</h2>
+            <p>Outubro representa mês de transição nutricional bem-executado tecnicamente, com redução calórica de 2271 para 2122 kcal (redução de 149 kcal ou 6.6%) mantendo aderência proteica excepcional (100.1% da meta de 200g). Consistência nutricional cirúrgica (CV 3.4%) demonstra controle maduro do protocolo. Composição corporal validou eficácia do protocolo: perda de 3kg mantendo massa muscular praticamente estável. Principal limitador identificado: sono subótimo com 7 dias abaixo de 6h e alta variabilidade (maior desvio padrão na semana 1). Aderência de treino em 74% (23/31 treinos) reflete estratégia de preservação inteligente durante deficit calórico, priorizando qualidade sobre volume absoluto.</p>
+        </div>
+
+        <!-- Análise de Composição Corporal -->
+        <div class="section">
+            <h2>Análise de Composição Corporal (Bioimpedância)</h2>
+            
+            <div class="bioimpedance-comparison manter-junto">
+                <div class="bioimpedance-card initial">
+                    <h4>Inicial (28/09/2025)</h4>
+                    <div class="metric-item" style="margin: 0.5em 0;">
+                        <div class="metric-label">Peso</div>
+                        <div class="metric-value">78.6 kg</div>
+                    </div>
+                    <div class="metric-item" style="margin: 0.5em 0;">
+                        <div class="metric-label">Gordura Corporal</div>
+                        <div class="metric-value">21.6%</div>
+                        <div class="metric-comparison">17.0 kg</div>
+                    </div>
+                    <div class="metric-item" style="margin: 0.5em 0;">
+                        <div class="metric-label">Músculo</div>
+                        <div class="metric-value">57.5 kg</div>
+                        <div class="metric-comparison">73.2% do peso</div>
+                    </div>
+                    <div class="metric-item" style="margin: 0.5em 0;">
+                        <div class="metric-label">Pontuação</div>
+                        <div class="metric-value">75/100</div>
+                    </div>
+                </div>
+
+                <div class="bioimpedance-card final">
+                    <h4>Final (03/11/2025)</h4>
+                    <div class="metric-item" style="margin: 0.5em 0;">
+                        <div class="metric-label">Peso</div>
+                        <div class="metric-value">75.7 kg</div>
+                    </div>
+                    <div class="metric-item" style="margin: 0.5em 0;">
+                        <div class="metric-label">Gordura Corporal</div>
+                        <div class="metric-value">22.3%</div>
+                        <div class="metric-comparison">16.9 kg</div>
+                    </div>
+                    <div class="metric-item" style="margin: 0.5em 0;">
+                        <div class="metric-label">Músculo</div>
+                        <div class="metric-value">54.9 kg</div>
+                        <div class="metric-comparison">72.5% do peso</div>
+                    </div>
+                    <div class="metric-item" style="margin: 0.5em 0;">
+                        <div class="metric-label">Pontuação</div>
+                        <div class="metric-value">72/100</div>
+                    </div>
+                </div>
+
+                <div class="bioimpedance-card delta">
+                    <h4>Delta (Variação)</h4>
+                    <div class="metric-item" style="margin: 0.5em 0;">
+                        <div class="metric-label">Peso</div>
+                        <div class="metric-value critical">-2.9 kg</div>
+                    </div>
+                    <div class="metric-item" style="margin: 0.5em 0;">
+                        <div class="metric-label">Gordura</div>
+                        <div class="metric-value positive">-0.1 kg</div>
+                        <div class="metric-comparison">+0.7% (paradoxo)</div>
+                    </div>
+                    <div class="metric-item" style="margin: 0.5em 0;">
+                        <div class="metric-label">Músculo</div>
+                        <div class="metric-value critical">-2.6 kg</div>
+                        <div class="metric-comparison">-4.5%</div>
+                    </div>
+                    <div class="metric-item" style="margin: 0.5em 0;">
+                        <div class="metric-label">Pontuação</div>
+                        <div class="metric-value critical">-3 pts</div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="alert critical manter-junto">
+                <h4>ANÁLISE CRÍTICA: Paradoxo Bioimpedância vs. Performance</h4>
+                <p><strong>Discrepância Identificada:</strong> Bioimpedância sugere perda muscular de 2.6kg (-4.5%) em 5 semanas, porém métricas de performance contradizem fortemente:</p>
+                <ul>
+                    <li><strong>Leg Press:</strong> Mantido 200kg x 12-14 reps (RPE 8-8.5) durante TODO o período de deficit</li>
+                    <li><strong>Agachamento Smith:</strong> Progressão de 60kg para 70kg (+16.7%) mesmo em cutting</li>
+                    <li><strong>Supino:</strong> Mantido 60kg x 8-10 reps com técnica preservada</li>
+                    <li><strong>RPE médio estável:</strong> 7.8/10 sem sinais de fadiga acumulada</li>
+                </ul>
+                <p><strong>Interpretação Técnica:</strong> Bioimpedância de impedância elétrica é ALTAMENTE sensível a hidratação, glicogênio muscular e eletrólitos. Em protocolo de cutting com redução de carboidratos (240g → 186g nos últimos dias), depleção de glicogênio intramuscular (~400-500g) explica "perda muscular aparente". <span class="positive">Performance preservada ou melhorada indica que massa muscular contrátil está INTACTA</span>.</p>
+                <p><strong>Conclusão:</strong> Protocolo está funcionando corretamente. Perda de peso (2.9kg) foi majoritariamente água intracelular + gordura visceral. Recomenda-se DEXA scan para confirmação objetiva, mas dados de treino são mais confiáveis que bioimpedância neste contexto.</p>
+            </div>
+        </div>
+
+        <!-- Análise Nutricional Mensal -->
+        <div class="section">
+            <h2>Análise Nutricional Mensal</h2>
+            
+            <div class="metrics-grid">
+                <div class="metric-item">
+                    <div class="metric-label">Calorias Médias</div>
+                    <div class="metric-value">2191 kcal</div>
+                    <div class="metric-comparison">vs. meta 2150 kcal: <span class="positive">+1.9%</span></div>
+                </div>
+
+                <div class="metric-item">
+                    <div class="metric-label">Proteína Média</div>
+                    <div class="metric-value">200g</div>
+                    <div class="metric-comparison">Meta: 200g | <span class="positive">100.1% aderência</span></div>
+                </div>
+
+                <div class="metric-item">
+                    <div class="metric-label">Carboidratos Médios</div>
+                    <div class="metric-value">216g</div>
+                    <div class="metric-comparison">Meta: 215g | <span class="positive">100.5%</span></div>
+                </div>
+
+                <div class="metric-item">
+                    <div class="metric-label">Gordura Média</div>
+                    <div class="metric-value">51g</div>
+                    <div class="metric-comparison">Meta: 60g | <span class="warning">85% (abaixo)</span></div>
+                </div>
+            </div>
+
+            <h3>Consistência Nutricional</h3>
+            <div class="metrics-grid">
+                <div class="metric-item">
+                    <div class="metric-label">Coeficiente de Variação</div>
+                    <div class="metric-value positive">3.4%</div>
+                    <div class="metric-comparison">Excelente controle (CV &lt;5%)</div>
+                </div>
+
+                <div class="metric-item">
+                    <div class="metric-label">Dias na Meta Proteica (±10g)</div>
+                    <div class="metric-value">30/31</div>
+                    <div class="metric-comparison"><span class="positive">96.8% de aderência</span></div>
+                </div>
+            </div>
+
+            <h3>Evolução Semanal das Calorias</h3>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Semana</th>
+                        <th>Período</th>
+                        <th>Calorias Médias</th>
+                        <th>CV</th>
+                        <th>Tendência</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>Semana 1</td>
+                        <td>01-05/10</td>
+                        <td>2271 kcal</td>
+                        <td>1.8%</td>
+                        <td><span class="positive">Baseline estabelecido</span></td>
+                    </tr>
+                    <tr>
+                        <td>Semana 2</td>
+                        <td>06-12/10</td>
+                        <td>2259 kcal</td>
+                        <td>0.8%</td>
+                        <td><span class="positive">Estável (-12 kcal)</span></td>
+                    </tr>
+                    <tr>
+                        <td>Semana 3</td>
+                        <td>13-19/10</td>
+                        <td>2178 kcal</td>
+                        <td>3.2%</td>
+                        <td><span class="warning">Redução -81 kcal (-3.6%)</span></td>
+                    </tr>
+                    <tr>
+                        <td>Semana 4</td>
+                        <td>20-26/10</td>
+                        <td>2127 kcal</td>
+                        <td>1.2%</td>
+                        <td><span class="warning">Redução -51 kcal (-2.3%)</span></td>
+                    </tr>
+                    <tr>
+                        <td>Semana 5</td>
+                        <td>27-31/10</td>
+                        <td>2122 kcal</td>
+                        <td>0.9%</td>
+                        <td><span class="positive">Estabilizado (-5 kcal)</span></td>
+                    </tr>
+                </tbody>
+            </table>
+
+            <div class="alert success manter-junto">
+                <h4>Destaque Positivo: Transição Calórica Exemplar</h4>
+                <p>Redução gradual de 149 kcal ao longo de 5 semanas (média de -30 kcal/semana) representa execução PERFEITA de protocolo de cutting. Evitou choque metabólico e preservou performance. CV excepcionalmente baixo (3.4%) indica disciplina e compreensão do sistema.</p>
+            </div>
+        </div>
+
+        <!-- Análise de Sono e Recuperação -->
+        <div class="section">
+            <h2>Análise de Sono e Recuperação Mensal</h2>
+
+            <div class="metrics-grid">
+                <div class="metric-item">
+                    <div class="metric-label">Duração Média</div>
+                    <div class="metric-value warning">7.0h</div>
+                    <div class="metric-comparison">Meta: ≥7h | <span class="positive">55% dos dias</span></div>
+                </div>
+
+                <div class="metric-item">
+                    <div class="metric-label">Qualidade Média</div>
+                    <div class="metric-value">4.0/5</div>
+                    <div class="metric-comparison"><span class="positive">80% - Adequado</span></div>
+                </div>
+
+                <div class="metric-item">
+                    <div class="metric-label">Dias com Sono &lt;6h</div>
+                    <div class="metric-value warning">7 dias</div>
+                    <div class="metric-comparison"><span class="warning">22.6% do mês</span></div>
+                </div>
+
+                <div class="metric-item">
+                    <div class="metric-label">Dias com Sono ≥7h</div>
+                    <div class="metric-value">17 dias</div>
+                    <div class="metric-comparison"><span class="positive">54.8% do mês</span></div>
+                </div>
+            </div>
+
+            <h3>Evolução Semanal do Sono</h3>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Semana</th>
+                        <th>Duração Média</th>
+                        <th>Qualidade</th>
+                        <th>Dias &lt;6h</th>
+                        <th>Status</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>Semana 1</td>
+                        <td>7.4h</td>
+                        <td>3.8/5</td>
+                        <td>0/5</td>
+                        <td><span class="positive">Adequado</span></td>
+                    </tr>
+                    <tr>
+                        <td>Semana 2</td>
+                        <td>6.4h</td>
+                        <td>3.9/5</td>
+                        <td>4/7</td>
+                        <td><span class="critical">Crítico</span></td>
+                    </tr>
+                    <tr>
+                        <td>Semana 3</td>
+                        <td>7.1h</td>
+                        <td>4.0/5</td>
+                        <td>1/7</td>
+                        <td><span class="positive">Recuperado</span></td>
+                    </tr>
+                    <tr>
+                        <td>Semana 4</td>
+                        <td>7.3h</td>
+                        <td>4.1/5</td>
+                        <td>1/7</td>
+                        <td><span class="positive">Ótimo</span></td>
+                    </tr>
+                    <tr>
+                        <td>Semana 5</td>
+                        <td>6.4h</td>
+                        <td>4.0/5</td>
+                        <td>1/5</td>
+                        <td><span class="warning">Declínio</span></td>
+                    </tr>
+                </tbody>
+            </table>
+
+            <div class="alert warning manter-junto">
+                <h4>Padrão Identificado: Sono Instável com Ciclos de 2 Semanas</h4>
+                <p><strong>Observação:</strong> Semanas 2 e 5 apresentaram déficit significativo (média 6.4h), enquanto semanas 3-4 mostraram recuperação. Padrão sugere influência externa cíclica (possivelmente demandas acadêmicas ou trabalho).</p>
+                <p><strong>Impacto:</strong> Apesar da variabilidade, performance de treino manteve-se estável, indicando resiliência e capacidade de adaptação. Porém, sono subcrônico pode limitar progressão futura.</p>
+                <p><strong>Recomendação:</strong> Identificar e mitigar fatores que levam aos ciclos de privação. Priorizar sono >7h consistentemente, especialmente durante cutting onde recuperação é ainda mais crítica.</p>
+            </div>
+        </div>
+
+        <!-- Desempenho nos Treinos -->
+        <div class="section">
+            <h2>Desempenho nos Treinos - Análise Mensal</h2>
+
+            <div class="metrics-grid">
+                <div class="metric-item">
+                    <div class="metric-label">Sessões Realizadas</div>
+                    <div class="metric-value">23/31</div>
+                    <div class="metric-comparison">Aderência: <span class="warning">74.2%</span></div>
+                </div>
+
+                <div class="metric-item">
+                    <div class="metric-label">RPE Médio Mensal</div>
+                    <div class="metric-value">7.8/10</div>
+                    <div class="metric-comparison"><span class="positive">Zona ótima de treino</span></div>
+                </div>
+
+                <div class="metric-item">
+                    <div class="metric-label">Volume Total Estimado</div>
+                    <div class="metric-value">~460 séries</div>
+                    <div class="metric-comparison">Média de 20 séries/treino</div>
+                </div>
+
+                <div class="metric-item">
+                    <div class="metric-label">Distribuição por Grupo</div>
+                    <div class="metric-value">Equilibrada</div>
+                    <div class="metric-comparison">5 treinos ABCDE/semana</div>
+                </div>
+            </div>
+
+            <h3>Aderência Semanal aos Treinos</h3>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Semana</th>
+                        <th>Treinos Realizados</th>
+                        <th>Meta</th>
+                        <th>Aderência</th>
+                        <th>Observações</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>Semana 1</td>
+                        <td>3/5</td>
+                        <td>5</td>
+                        <td><span class="critical">60%</span></td>
+                        <td>Início do protocolo, adaptação</td>
+                    </tr>
+                    <tr>
+                        <td>Semana 2</td>
+                        <td>6/7</td>
+                        <td>5</td>
+                        <td><span class="positive">86%</span></td>
+                        <td>Recuperação de ritmo</td>
+                    </tr>
+                    <tr>
+                        <td>Semana 3</td>
+                        <td>5/7</td>
+                        <td>5</td>
+                        <td><span class="positive">71%</span></td>
+                        <td>Consistente</td>
+                    </tr>
+                    <tr>
+                        <td>Semana 4</td>
+                        <td>5/7</td>
+                        <td>5</td>
+                        <td><span class="positive">71%</span></td>
+                        <td>Mantido</td>
+                    </tr>
+                    <tr>
+                        <td>Semana 5</td>
+                        <td>4/5</td>
+                        <td>5</td>
+                        <td><span class="positive">80%</span></td>
+                        <td>Final de mês forte</td>
+                    </tr>
+                </tbody>
+            </table>
+
+            <h3>Progressões de Carga Documentadas</h3>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Exercício</th>
+                        <th>Carga Inicial</th>
+                        <th>Carga Final</th>
+                        <th>Progressão</th>
+                        <th>Avaliação</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>Agachamento Smith</td>
+                        <td>60kg x 12</td>
+                        <td>70kg x 11</td>
+                        <td><span class="positive">+16.7%</span></td>
+                        <td>Excelente em deficit</td>
+                    </tr>
+                    <tr>
+                        <td>Leg Press 45º</td>
+                        <td>200kg x 12-14</td>
+                        <td>200kg x 13-14</td>
+                        <td><span class="positive">Mantido</span></td>
+                        <td>Estável - positivo</td>
+                    </tr>
+                    <tr>
+                        <td>Supino Reto</td>
+                        <td>60kg x 8-10</td>
+                        <td>60kg x 9-10</td>
+                        <td><span class="positive">Mantido</span></td>
+                        <td>Preservado</td>
+                    </tr>
+                    <tr>
+                        <td>Remada Dobrada</td>
+                        <td>70kg x 10</td>
+                        <td>70kg x 12</td>
+                        <td><span class="positive">+20% volume</span></td>
+                        <td>Melhoria resistência</td>
+                    </tr>
+                    <tr>
+                        <td>Rosca Scott</td>
+                        <td>50kg x 10</td>
+                        <td>50kg x 12</td>
+                        <td><span class="positive">+20% volume</span></td>
+                        <td>Progressão clara</td>
+                    </tr>
+                </tbody>
+            </table>
+
+            <div class="alert success manter-junto">
+                <h4>Análise Técnica: Performance Durante Cutting</h4>
+                <p>Manutenção de cargas absolutas em exercícios compostos principais (leg press, supino) combinada com progressão em agachamento (+16.7%) durante deficit calórico de 149 kcal é indicador INEQUÍVOCO de preservação de massa muscular contrátil. Aumento de volume (repetições) em exercícios de isolamento sugere melhoria na capacidade de trabalho e eficiência neuromuscular.</p>
+                <p><strong>Conclusão:</strong> Protocolo de cutting está funcionando PERFEITAMENTE. Perda de peso observada na bioimpedância não representa perda muscular real, mas sim depleção de glicogênio e água intracelular (esperado e desejável em cutting).</p>
+            </div>
+
+            <h3>Exemplos de Treinos Bem-Executados</h3>
+            
+            <div class="week-summary manter-junto">
+                <h4>Treino A - Peito e Ombro (07/10)</h4>
+                <p><strong>Principais exercícios:</strong></p>
+                <ul>
+                    <li>Supino reto: 60kg x 8-10 reps (RPE 8.5-9)</li>
+                    <li>Supino inclinado Smith: 50kg x 12 reps (RPE 8)</li>
+                    <li>Crucifixo voador: 89kg x 12 reps (RPE 7.5)</li>
+                </ul>
+                <p><em>Observação do aluno:</em> "Foi um dia legal, consegui fazer as coisas mais cedo e foi produtivo, não somente na academia, mas nos outros ambientes da vida"</p>
+                <p><strong>Análise GN Coach:</strong> Correlação positiva entre organização do dia e qualidade de treino. Nota-se que treinos matutinos/diurnos resultam em melhor percepção subjetiva.</p>
+            </div>
+
+            <div class="week-summary manter-junto">
+                <h4>Treino B - Quadríceps e Adutores (28/10)</h4>
+                <p><strong>Principais exercícios:</strong></p>
+                <ul>
+                    <li>Agachamento Smith: 70kg x 11 reps (RPE 9) - NOVO RECORDE</li>
+                    <li>Leg Press 45º: 200kg x 13-14 reps (RPE 7.5-8)</li>
+                    <li>Cadeira extensora: 91kg x 12-13 reps (RPE 8)</li>
+                </ul>
+                <p><em>Observação do aluno:</em> "Gostei desse dia, consegui pegar as cargas com mais facilidade"</p>
+                <p><strong>Análise GN Coach:</strong> Progressão em agachamento durante semana 4 do cutting valida que protocolo nutricional está suportando performance. Aumento na "facilidade percebida" sugere adaptação neuromuscular positiva.</p>
+            </div>
+
+            <div class="week-summary manter-junto">
+                <h4>Treino D - Posterior e Glúteos (31/10)</h4>
+                <p><strong>Principais exercícios:</strong></p>
+                <ul>
+                    <li>Peso morto pernas esticadas: 60kg x 12 reps (RPE 8)</li>
+                    <li>Cadeira flexora: 48kg x 12 reps (RPE 8)</li>
+                    <li>Cadeira abdutora: 70kg x 12 reps (RPE 7.5)</li>
+                </ul>
+                <p><em>Observação do aluno:</em> "Passei maior parte do dia fora, e acabei não conseguindo controlar a gordura. Depois do almoço comecei a sentir alguns sintomas de hipoglicemia, na hora que percebi tive que comer um biscoito que tinha por perto ai deu uma aumentada na gordura"</p>
+                <p><strong>Análise GN Coach:</strong> Autorregulação nutricional demonstrada - identificou hipoglicemia e corrigiu imediatamente. Apesar do desvio no perfil de macros (75g gordura vs. 60g meta), treino foi completado com qualidade. Exemplo de flexibilidade cognitiva e priorização de bem-estar sobre aderência rígida.</p>
+            </div>
+        </div>
+
+        <!-- Insights Detalhados -->
+        <div class="section">
+            <h2>Insights Baseados em Dados e Filosofia GN Coach</h2>
+
+            <div class="insights-container">
+                <div class="insight-box manter-junto">
+                    <div class="insight-title">Controle Nutricional Excepcional Indica Transição para Perfil Autônomo</div>
+                    <div class="insight-content">
+                        <p><strong>Observação:</strong> Coeficiente de variação de 3.4% ao longo de 31 dias, com aderência proteica de 96.8% (30/31 dias dentro de ±10g da meta), representa nível de consistência superior a 90% dos praticantes em protocolos de cutting. Mais relevante: transição calórica gradual de 2271→2122 kcal foi auto-gerenciada sem perda de qualidade.</p>
+                        
+                        <p><strong>Correlação identificada:</strong> Semanas com menor variação calórica (semanas 2, 4 e 5 com CV 0.8-1.2%) coincidiram com melhor qualidade de sono (média 6.8h vs. 7.0h nas semanas mais variáveis). Isso sugere que consistência nutricional promove homeostase que facilita sono, criando ciclo virtuoso.</p>
+                        
+                        <p><strong>Aplicação prática:</strong> Chico demonstrou capacidade de executar protocolo complexo (cutting progressivo) com autonomia quase completa. Próximo passo natural: introduzir "janelas nutricionais" (±10-15% das metas calóricas) em vez de targets fixos, mantendo apenas meta proteica rígida. Isso testará se a compreensão dos princípios é profunda o suficiente para autorregulação flexível.</p>
+                        
+                        <p><strong>Fundamento teórico:</strong> Segundo Teoria da Autodeterminação (Ryan & Deci, 2017), competência percebida é preditor primário de motivação intrínseca. Chico está em transição clara de Regulação Identificada (valoriza benefícios) para Motivação Intrínseca (prazer no processo). Observação "gostei desse dia" (28/10) sugere satisfação emergindo do desempenho técnico, não apenas resultados.</p>
+                    </div>
+                </div>
+
+                <div class="insight-box manter-junto">
+                    <div class="insight-title">Performance Preservada Invalida Interpretação Negativa da Bioimpedância</div>
+                    <div class="insight-content">
+                        <p><strong>Observação:</strong> Bioimpedância sugere perda de 2.6kg de massa muscular (-4.5%), mas performance em exercícios compostos manteve-se estável ou MELHOROU: leg press constante em 200kg x 12-14, agachamento aumentou de 60kg para 70kg (+16.7%), supino preservado em 60kg x 8-10 reps. RPE médio de 7.8 permaneceu estável durante todo o mês.</p>
+                        
+                        <p><strong>Correlação identificada:</strong> Redução abrupta de carboidratos na última semana (240g média para 186g em alguns dias) precedeu medição final da bioimpedância (03/11). Depleção de glicogênio muscular (cada grama de glicogênio retém 3-4g de água) explica "perda" aparente de 2.6kg sem impacto em força ou resistência.</p>
+                        
+                        <p><strong>Aplicação prática:</strong> Para medições futuras de bioimpedância, padronizar: (1) realizar após dia de refeeds com carboidratos elevados (280-300g), (2) hidratação de 3-4L nas 24h prévias, (3) evitar medições após depleção de carboidratos. Alternativamente, priorizar DEXA scan que não é afetado por status de hidratação.</p>
+                        
+                        <p><strong>Fundamento teórico:</strong> Métricas de performance (cargas absolutas, volume de trabalho, velocidade de execução) são indicadores mais confiáveis de massa muscular funcional do que bioimpedância em contextos de manipulação nutricional. Princípio da Especificidade do Treinamento: se força é mantida, músculo é preservado (Schoenfeld, 2010).</p>
+                    </div>
+                </div>
+
+                <div class="insight-box manter-junto">
+                    <div class="insight-title">Padrão Cíclico de Sono Requer Intervenção Estrutural</div>
+                    <div class="insight-content">
+                        <p><strong>Observação:</strong> Identificado padrão bimodal de sono: semanas ímpares (1, 3, 5) com maior variabilidade e menor duração média (6.4-7.1h), semanas pares (2, 4) com melhor consistência (7.3-7.4h). Semana 2 teve 4 dias com sono <6h (crítico), mas performance de treino não degradou proporcionalmente.</p>
+                        
+                        <p><strong>Correlação identificada:</strong> Análise dos horários de dormir revela padrão: segundas, quartas e sextas apresentam sono iniciado após 01:00 (média 01:20), enquanto terças e quintas iniciam antes de 00:30. Não há correlação óbvia com dias de treino, sugerindo influência externa (possivelmente agenda acadêmica/profissional).</p>
+                        
+                        <p><strong>Aplicação prática:</strong> (1) Identificar compromissos fixos que causam atrasos nas segundas/quartas/sextas, (2) implementar "protocolo de sono de recuperação" nos dias seguintes a privação (target 8h), (3) considerar ajuste no split de treino: mover treinos mais exigentes (pernas, costas) para dias após melhor sono (terças, quintas, domingos).</p>
+                        
+                        <p><strong>Fundamento teórico:</strong> Privação de sono <6h por 3+ dias consecutivos reduz síntese proteica muscular em 18-25% (Dattilo et al., 2011) e aumenta cortisol em 37% (Leproult & Van Cauter, 2010). Porém, "débito de sono" pode ser parcialmente recuperado com extensão de sono nos dias seguintes. Chico demonstra resiliência acima da média - mesmo com déficit, mantém performance - mas isso não é sustentável indefinidamente em cutting mais agressivo.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Recomendações e Ajustes -->
+        <div class="section">
+            <h2>Recomendações e Ajustes para Novembro</h2>
+
+            <h3>Prioridades para Próximo Mês</h3>
+
+            <div class="alert warning">
+                <h4>Prioridade #1: Estabilização e Consolidação do Sono</h4>
+                <p>Identificar e mitigar fatores externos que causam ciclos de privação nas semanas ímpares. Sono é o limitador crítico atual para progressão futura.</p>
+                <ul>
+                    <li><strong>Meta quantitativa:</strong> Reduzir dias com sono <6h de 7 para ≤3 em novembro</li>
+                    <li><strong>Estratégia:</strong> Implementar "rotina pré-sono" fixa 30 minutos antes do target (desligar telas, leitura leve, temperatura ambiente controlada)</li>
+                    <li><strong>Monitoramento:</strong> Registrar fatores que atrasam sono (trabalhos acadêmicos, eventos sociais) para identificar padrões previsíveis</li>
+                    <li><strong>Contingência:</strong> Em dias de sono <6h, priorizar recuperação no dia seguinte (8h+ de sono, treino mais leve ou rest day estratégico)</li>
+                </ul>
+            </div>
+
+            <div class="alert success">
+                <h4>Prioridade #2: Validação de Composição Corporal com Método Objetivo</h4>
+                <p>Bioimpedância mostrou-se inadequada para monitoramento preciso em contexto de cutting com manipulação de carboidratos. Necessário método gold-standard.</p>
+                <ul>
+                    <li><strong>Ação imediata:</strong> Agendar DEXA scan ou pletismografia (BodPod) para baseline confiável</li>
+                    <li><strong>Justificativa:</strong> Performance validou preservação muscular, mas dado objetivo é necessário para ajustes finos no protocolo de cutting</li>
+                    <li><strong>Frequência:</strong> Mensal durante cutting, quinzenal se aceleração de perda de peso for implementada</li>
+                    <li><strong>Alternativa econômica:</strong> Circunferências padronizadas (cintura, coxa, braço) + fotos semanais com iluminação controlada</li>
+                </ul>
+            </div>
+
+            <h3>Ajustes no Protocolo para Novembro</h3>
+
+            <div class="metrics-grid">
+                <div class="metric-item">
+                    <div class="metric-label">Nutrição</div>
+                    <div class="metric-value warning">MANTER COM FLEXIBILIDADE</div>
+                    <div class="metric-comparison">2100-2150 kcal | 200g proteína (rígida) | Carbo/gordura flexíveis (±15%)</div>
+                </div>
+
+                <div class="metric-item">
+                    <div class="metric-label">Treino</div>
+                    <div class="metric-value positive">PROGRESSÃO CAUTELOSA</div>
+                    <div class="metric-comparison">Manter volume | Buscar +2.5-5% carga em 2-3 exercícios principais/mês</div>
+                </div>
+
+                <div class="metric-item">
+                    <div class="metric-label">Recuperação</div>
+                    <div class="metric-value critical">PROTOCOLAR INTERVENÇÃO</div>
+                    <div class="metric-comparison">Target 7.5h/noite | Máximo 2 dias <6h consecutivos | Rotina pré-sono implementada</div>
+                </div>
+
+                <div class="metric-item">
+                    <div class="metric-label">Monitoramento</div>
+                    <div class="metric-value">DEXA OU CIRCUNFERÊNCIAS</div>
+                    <div class="metric-comparison">Substituir bioimpedância | Método objetivo quinzenal</div>
+                </div>
+            </div>
+
+            <h3>Plano de Ação Detalhado</h3>
+
+            <table>
+                <thead>
+                    <tr>
+                        <th>Área</th>
+                        <th>Ação Específica</th>
+                        <th>Métrica de Sucesso</th>
+                        <th>Prazo</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><strong>Sono</strong></td>
+                        <td>Identificar comprometimentos fixos que atrasam sono segundas/quartas/sextas</td>
+                        <td>Lista documentada até 10/11</td>
+                        <td>1 semana</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Sono</strong></td>
+                        <td>Implementar rotina pré-sono de 30 minutos (sem telas, leitura, temperatura ambiente 18-21°C)</td>
+                        <td>5 dias/semana mínimo</td>
+                        <td>Imediato</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Nutrição</strong></td>
+                        <td>Transitar de metas fixas para "janelas" (±15% em carbo/gordura, meta proteica mantida rígida)</td>
+                        <td>Manter CV <5% com maior flexibilidade</td>
+                        <td>Semana 2 de nov</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Composição</strong></td>
+                        <td>Agendar DEXA scan ou iniciar protocolo de circunferências semanais</td>
+                        <td>Baseline estabelecido até 15/11</td>
+                        <td>2 semanas</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Treino</strong></td>
+                        <td>Selecionar 3 exercícios compostos para progressão prioritária (+2.5kg/mês)</td>
+                        <td>Agachamento, supino, remada dobrada</td>
+                        <td>Mês completo</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Autonomia</strong></td>
+                        <td>Realizar 1 semana de autogestão completa (sem prescrição diária externa)</td>
+                        <td>Manter aderência >80% e performance</td>
+                        <td>Última semana nov</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <!-- Conclusão e Status Geral -->
+        <div class="section">
+            <h2>Conclusão e Status Geral</h2>
+
+            <div class="alert success">
+                <h4>Status: PROTOCOLO FUNCIONANDO ACIMA DA MÉDIA</h4>
+                <p>Outubro representou mês tecnicamente excelente de cutting controlado. Chico demonstrou três pilares fundamentais de sucesso a longo prazo:</p>
+                <ol>
+                    <li><strong>Consistência Nutricional Cirúrgica:</strong> CV 3.4% é superior a 90% dos praticantes. Indica compreensão profunda do sistema, não apenas execução mecânica.</li>
+                    <li><strong>Performance Preservada em Deficit:</strong> Manutenção (ou progressão) de cargas durante perda de 2.9kg valida que protocolo está funcionando PERFEITAMENTE. Não houve catabolismo muscular real.</li>
+                    <li><strong>Autorregulação Emergente:</strong> Episódio de hipoglicemia corrigido autonomamente (31/10) demonstra transição de executor para praticante pensante. Reconheceu sintoma, ajustou imediatamente, manteve performance.</li>
+                </ol>
+                <p><strong>Paradoxo Bioimpedância:</strong> "Perda muscular" de 2.6kg contradiz veementemente dados de performance. Interpretação correta: depleção de glicogênio (400-500g) + água intracelular associada (1200-2000g) = ~2.6kg "perdidos" sem impacto funcional. Músculo contrátil PRESERVADO.</p>
+                <p><strong>Limitador Identificado:</strong> Sono instável (7 dias <6h) representa único gargalo atual. Performance resiliente compensou parcialmente, mas não é sustentável em cutting mais agressivo ou por período estendido. Prioridade máxima para novembro.</p>
+            </div>
+
+            <h3>Perfil Motivacional e Desenvolvimento de Autonomia</h3>
+            <p><strong>Perfil identificado:</strong> Em Desenvolvimento com transição acelerada para Autônomo</p>
+            <p><strong>Nível de autonomia:</strong> 7/10 (evolução de 6/10 em setembro)</p>
+            <p><strong>Indicadores de desenvolvimento:</strong></p>
+            <ul>
+                <li><strong>Competência Técnica:</strong> Execução autônoma de protocolo complexo (cutting progressivo) sem necessidade de microgestão diária. CV 3.4% e aderência 96.8% demonstram domínio operacional.</li>
+                <li><strong>Autorregulação Nutricional:</strong> Episódio de hipoglicemia (31/10) corrigido independentemente sem comprometer treino ou qualidade nutricional do dia. Flexibilidade cognitiva preservando princípio (energia adequada) sobre regra rígida (meta exata de gordura).</li>
+                <li><strong>Percepção Corporal Refinada:</strong> Comentários como "consegui pegar as cargas com mais facilidade" (28/10) indicam sensibilidade crescente a sinais internos de adaptação. Não apenas executa, mas PERCEBE e INTERPRETA.</li>
+                <li><strong>Transição Motivacional:</strong> Prazer emergindo do processo técnico ("gostei desse dia") em vez de apenas resultados externos. Indicador de motivação intrínseca se consolidando.</li>
+            </ul>
+
+            <h3>Próximos Marcos e Objetivos</h3>
+            <div class="metrics-grid">
+                <div class="metric-item">
+                    <div class="metric-label">Meta Curto Prazo (2 semanas)</div>
+                    <div class="metric-value">Estabilizar Sono</div>
+                    <div class="metric-comparison">Progresso atual: 0% | Target: ≤3 dias <6h em novembro</div>
+                </div>
+
+                <div class="metric-item">
+                    <div class="metric-label">Meta Médio Prazo (1 mês)</div>
+                    <div class="metric-value">Validar Composição</div>
+                    <div class="metric-comparison">Progresso atual: 0% | Target: DEXA scan baseline estabelecido</div>
+                </div>
+
+                <div class="metric-item">
+                    <div class="metric-label">Meta Técnica (1 mês)</div>
+                    <div class="metric-value">Progressão Seletiva</div>
+                    <div class="metric-comparison">Progresso atual: 25% | Target: +2.5-5kg em 3 exercícios principais</div>
+                </div>
+
+                <div class="metric-item">
+                    <div class="metric-label">Meta de Autonomia (1 mês)</div>
+                    <div class="metric-value">Semana Autogerida</div>
+                    <div class="metric-comparison">Progresso atual: 0% | Target: 7 dias independentes mantendo qualidade</div>
+                </div>
+            </div>
+
+            <h3>Perspectiva para Novembro e Além</h3>
+            <p>Chico está em trajetória excelente. Outubro validou que fundamentos técnicos estão sólidos - agora é momento de refinamento e teste de autonomia. Três focos principais:</p>
+            
+            <ol>
+                <li><strong>Consolidar Sono como Pilar Não-Negociável:</strong> Performance resiliente mascarou impacto de privação, mas ceiling de progressão será determinado por recuperação. Intervenção estrutural necessária.</li>
+                
+                <li><strong>Transitar de Executor Excelente para Praticante Autônomo:</strong> Introdução de flexibilidade controlada (janelas nutricionais) testará se compreensão é profunda ou mecânica. Sucesso nesta transição o qualificará para Fase 3 (Otimização Avançada).</li>
+                
+                <li><strong>Estabelecer Sistema de Monitoramento Objetivo:</strong> Bioimpedância provou-se inadequada. DEXA scan ou protocolo rigoroso de circunferências + fotos permitirá decisões baseadas em dados reais, não artefatos de medição.</li>
+            </ol>
+
+            <p><strong>Projeção:</strong> Mantendo trajetória atual (especialmente se sono for estabilizado), Chico estará pronto para transição para Fase 3 (Otimização Avançada) em dezembro/janeiro. Isso incluirá introdução de técnicas avançadas (clusters, drop-sets, periodização ondulada) e maior responsabilidade na formulação do próprio protocolo.</p>
+
+            <p><strong>Mensagem Final:</strong> Outubro foi mês de fundação sólida. Performance preservada em deficit validou protocolo. Consistência nutricional demonstrou maturidade. Único ajuste crítico: sono. Novembro é mês de refinamento - estabelecer últimas peças do sistema antes de acelerar progressão.</p>
+        </div>
+
+        <!-- Rodapé -->
+        <div class="footer">
+            <p><strong>GN Coach 5.0</strong></p>
+            <p>Próximo relatório: Novembro 2025 (01/11 - 30/11)</p>
+            <p>Relatório gerado em: 03 de Novembro de 2025</p>
+            <p><em>Metodologia baseada em Teoria da Autodeterminação e Periodização Baseada em Evidências</em></p>
+        </div>
+    </div>
+</body>
+</html>

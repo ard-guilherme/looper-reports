@@ -1,12 +1,14 @@
 import logging
-from langchain_core.output_parsers import StrOutputParser
-from langchain_core.prompts import PromptTemplate
-from langchain_google_genai import ChatGoogleGenerativeAI
-
+import os
+import re
 from app.core.config import settings
+from langchain_google_genai.chat_models import ChatGoogleGenerativeAI
+from langchain_core.prompts import ChatPromptTemplate
+from langchain_core.output_parsers import StrOutputParser
 
 logger = logging.getLogger(__name__)
 
+# Mapeia os tipos de seção para seus respectivos arquivos de prompt
 PROMPT_FILES = {
     "overview": "sections/overview_prompt.txt",
     "nutrition_analysis": "sections/nutrition_analysis_prompt.txt",
@@ -17,49 +19,77 @@ PROMPT_FILES = {
     "conclusion": "sections/conclusion_prompt.txt",
 }
 
-async def generate_report_section(section_type: str, context_data: str, temperature: float = 0.7) -> str:
+def _load_prompt_template(section_type: str) -> str:
+    """Carrega o template de prompt do arquivo correspondente."""
+    prompt_file = PROMPT_FILES.get(section_type)
+    if not prompt_file:
+        raise ValueError(f"Tipo de seção inválido: {section_type}")
+
+    base_dir = os.path.dirname(__file__)
+    file_path = os.path.join(base_dir, "prompts", prompt_file)
+
+    try:
+        with open(file_path, "r", encoding="utf-8") as f:
+            return f.read()
+    except FileNotFoundError:
+        logger.error(f"Arquivo de prompt não encontrado: {file_path}")
+        raise
+
+def _sanitize_html_output(raw_output: str) -> str:
+    """Limpa a saída do LLM, removendo texto conversacional e blocos de código markdown."""
+    sanitized_output = re.sub(r'^```html\n', '', raw_output, flags=re.MULTILINE)
+    sanitized_output = re.sub(r'\n```$', '', sanitized_output, flags=re.MULTILINE)
+
+    common_intros = [
+        r"Com certeza, GN Coach. Segue a análise.*?:\n+",
+        r"Com certeza. Como assistente do GN Coach,.*?:\n+",
+        r"Com base nos dados fornecidos, aqui está a análise.*?:\n+",
+        r"Análise Rápida:.*?---\n+",
+        r"BLOCO HTML DE.*?:\n+",
+    ]
+    for intro in common_intros:
+        sanitized_output = re.sub(intro, '', sanitized_output, flags=re.IGNORECASE | re.DOTALL)
+
+    return sanitized_output.strip()
+
+async def generate_report_section(section_type: str, context_data: str) -> str:
     """
-    Gera o conteúdo para uma seção específica do relatório usando um LLM.
+    Gera uma seção específica do relatório usando o LLM (Google Gemini via LangChain).
 
     Args:
         section_type: O tipo de seção a ser gerada (ex: 'overview').
-        context_data: Os dados pré-formatados e analisados para o prompt.
-        temperature: A temperatura do modelo para controlar a criatividade.
+        context_data: A string de contexto com todos os dados do aluno.
 
     Returns:
-        O conteúdo de texto gerado para a seção.
+        O conteúdo HTML gerado e sanitizado para a seção.
     """
-    if section_type not in PROMPT_FILES:
-        logger.error(f"Tipo de seção inválido: {section_type}")
-        raise ValueError(f"Nenhum arquivo de prompt definido para a seção '{section_type}'")
-
-    prompt_filename = PROMPT_FILES[section_type]
-    prompt_filepath = f"{settings.PROMPTS_DIR}/{prompt_filename}"
-    logger.info(f"Gerando seção '{section_type}' usando o prompt '{prompt_filepath}'")
-
+    logger.info(f"Gerando seção do relatório com LangChain e Gemini: {section_type}")
     try:
-        with open(prompt_filepath, "r", encoding="utf-8") as f:
-            template_content = f.read()
-    except FileNotFoundError:
-        logger.error(f"Arquivo de prompt não encontrado: {prompt_filepath}")
-        raise
+        prompt_template_str = _load_prompt_template(section_type)
+        
+        # Configura o modelo Gemini
+        llm = ChatGoogleGenerativeAI(
+            model="gemini-pro",
+            google_api_key=settings.GEMINI_API_KEY,
+            temperature=0.7,
+            convert_system_message_to_human=True # Necessário para Gemini
+        )
 
-    llm = ChatGoogleGenerativeAI(
-        model="gemini-1.5-pro",
-        google_api_key=settings.GEMINI_API_KEY,
-        temperature=temperature,
-        max_output_tokens=8192
-    )
+        # Cria o prompt a partir do template
+        prompt = ChatPromptTemplate.from_template(prompt_template_str)
 
-    prompt = PromptTemplate(
-        template=template_content,
-        input_variables=["context_data"],
-    )
+        # Define a cadeia de execução (prompt -> modelo -> parser de saída)
+        chain = prompt | llm | StrOutputParser()
 
-    chain = prompt | llm | StrOutputParser()
+        # Invoca a cadeia com os dados de contexto
+        raw_content = await chain.ainvoke({"context_data": context_data})
 
-    logger.debug(f"Invocando LLM para a seção '{section_type}'.")
-    section_content = await chain.ainvoke({"context_data": context_data})
-    logger.info(f"Conteúdo para a seção '{section_type}' gerado com sucesso.")
+        # Sanitiza a saída para garantir que é apenas HTML
+        sanitized_content = _sanitize_html_output(raw_content)
+        
+        logger.info(f"Seção '{section_type}' gerada com sucesso.")
+        return sanitized_content
 
-    return section_content.strip()
+    except Exception as e:
+        logger.error(f"Erro ao gerar a seção '{section_type}' com LangChain: {e}")
+        return f"<p>Erro ao gerar a seção <strong>{section_type}</strong>.</p>"

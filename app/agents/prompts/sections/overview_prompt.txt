@@ -9,4 +9,6 @@ Baseado nos dados analíticos e brutos fornecidos, escreva um parágrafo conciso
 **DADOS DO ALUNO PARA ANÁLISE:**
 {{context_data}}
 
+**IMPORTANTE:** Sua resposta deve conter APENAS o parágrafo de visão geral, sem nenhum texto adicional, introduções, despedidas ou blocos de código markdown (```html). A saída deve ser diretamente inserível no template HTML principal.
+
 **PARÁGRAFO DA VISÃO GERAL:**

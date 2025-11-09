@@ -382,12 +382,25 @@ def _build_training_details(checkins: list) -> str:
         journal = training_data.get('training_journal', '')
         observation = training_data.get('student_observation', 'Sem observações relatadas')
         if journal:
-            details.append(f"""
-<div class="training-detail manter-junto">
+            # Processa o journal para uma melhor formatação HTML
+            journal_html = ""
+            lines = journal.strip().split('\n')
+            for i, line in enumerate(lines):
+                line = line.strip()
+                if not line: continue
+                # Assume que a primeira linha não vazia é o nome do exercício
+                if i == 0:
+                    journal_html += f'<div class="exercise-name">{line}</div>'
+                else:
+                    # As linhas subsequentes são as séries
+                    journal_html += f'<div class="set-line">{line}</div>'
+
+            details.append(f"""<div class="training-detail manter-junto">
                 <strong>Treino de {date}</strong><br>
-                <em>Principais exercícios:</em><br>
-                <pre>{journal}</pre>
-                <em>Observação:</em> \"{observation}\" 
+                <div class="training-log">
+                    {journal_html}
+                </div>
+                <em>Observação:</em> "{observation}"
             </div>""")
     return "\n".join(details)
 
