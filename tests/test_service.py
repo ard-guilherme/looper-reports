@@ -19,7 +19,8 @@ SAMPLE_CHECKIN = {
     "created_at": datetime.now(UTC),
     "nutrition": { "calories": 2500, "protein": 180, "carbs": 250, "fat": 90 },
     "sleep": { "sleep_duration_hours": 8.0, "sleep_quality_rating": 5, "sleep_start_time": "23:00", "sleep_end_time": "07:00" },
-    "training": { "training_journal": "Supino Reto\nSérie 1: 100 kg x 5", "student_observation": "Me senti forte hoje." }
+    "training": { "training_journal": "Supino Reto\nSérie 1: 100 kg x 5", "student_observation": "Me senti forte hoje."
+}
 }
 
 SAMPLE_MACRO_GOALS = {
@@ -116,8 +117,13 @@ async def test_create_report_orchestration_flow():
             assert '<div class="training-detail manter-junto">' in final_html
             assert "<em>Observação:</em> \"Me senti forte hoje.\"" in final_html
 
-            # 4. Check that other sections are placeholder comments
-            assert "<!-- Score cards to be implemented -->" in final_html
+            # 4. Check for structural elements from the score cards section
+            assert '<div class="score-card positive">' in final_html
+            assert '<div class="score-label">Recuperação</div>' in final_html
+            assert '<div class="score-value">9/10</div>' in final_html
+
+            # 5. Check that other sections are placeholder comments
+            assert "<!-- Detailed insights to be implemented -->" in final_html
             
-            # 5. Check that the report was saved
+            # 6. Check that the report was saved
             mock_relatorios_collection.insert_one.assert_called_once()
