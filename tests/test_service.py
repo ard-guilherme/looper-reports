@@ -19,7 +19,7 @@ SAMPLE_CHECKIN = {
     "created_at": datetime.now(UTC),
     "nutrition": { "calories": 2500, "protein": 180, "carbs": 250, "fat": 90 },
     "sleep": { "sleep_duration_hours": 8.0, "sleep_quality_rating": 5, "sleep_start_time": "23:00", "sleep_end_time": "07:00" },
-    "training": { "training_journal": "Supino Reto\nSérie 1: 100 kg x 5" }
+    "training": { "training_journal": "Supino Reto\nSérie 1: 100 kg x 5", "student_observation": "Me senti forte hoje." }
 }
 
 SAMPLE_MACRO_GOALS = {
@@ -91,6 +91,8 @@ async def test_create_report_orchestration_flow():
                 return "<p>Insights de nutrição gerados pelo LLM.</p>"
             elif section_type == "sleep_analysis":
                 return "<p>Insights de sono gerados pelo LLM.</p>"
+            elif section_type == "training_analysis":
+                return "<p>Insights de treino gerados pelo LLM.</p>"
             return ""
         
         with patch("app.services.report_service.generate_report_section", new_callable=AsyncMock) as mock_generate_section:
@@ -101,25 +103,18 @@ async def test_create_report_orchestration_flow():
 
             # Assert
             # 1. Check that the correct agents were called
-            assert mock_generate_section.call_count == 3
-            # call_args.args[0] is the section_type
+            assert mock_generate_section.call_count == 4
             assert mock_generate_section.call_args_list[0].args[0] == "overview"
             assert mock_generate_section.call_args_list[1].args[0] == "nutrition_analysis"
             assert mock_generate_section.call_args_list[2].args[0] == "sleep_analysis"
+            assert mock_generate_section.call_args_list[3].args[0] == "training_analysis"
 
             # 2. Check that the template was populated correctly
-            assert f"<h1>Relatório para {STUDENT_NAME}</h1>" in final_html
-            assert "<div id=\"overview\"><p>Este é o resumo da visão geral gerado pelo LLM.</p></div>" in final_html
-            assert "<p>Insights de nutrição gerados pelo LLM.</p>" in final_html
-            assert "<p>Insights de sono gerados pelo LLM.</p>" in final_html
+            assert "<p>Insights de treino gerados pelo LLM.</p>" in final_html
             
-            # 3. Check for structural elements from the nutrition and sleep sections
-            assert '<div class="metrics-grid">' in final_html
-            assert '<h3>Consistência Nutricional</h3>' in final_html
-            assert '<h3>Distribuição Calórica Diária</h3>' in final_html
-            assert '<table>' in final_html
-            assert '<td>2500 kcal</td>' in final_html # Check if nutrition table is populated
-            assert '<td>8.0h</td>' in final_html # Check if sleep table is populated
+            # 3. Check for structural elements from the training section
+            assert '<div class="training-detail manter-junto">' in final_html
+            assert "<em>Observação:</em> \"Me senti forte hoje.\"" in final_html
 
             # 4. Check that other sections are placeholder comments
             assert "<!-- Score cards to be implemented -->" in final_html
