@@ -2,7 +2,7 @@
 
 ---
 
-![Python](https://img.shields.io/badge/Python-3.10%2B-blue?style=for-the-badge&logo=python) ![FastAPI](https://img.shields.io/badge/FastAPI-0.100%2B-green?style=for-the-badge&logo=fastapi) ![Docker](https://img.shields.io/badge/Docker-20.10%2B-blue?style=for-the-badge&logo=docker) ![MongoDB](https://img.shields.io/badge/MongoDB-4.4%2B-green?style=for-the-badge&logo=mongodb) ![OpenAI](https://img.shields.io/badge/OpenAI-GPT--4-blue?style=for-the-badge&logo=openai)
+![Python](https://img.shields.io/badge/Python-3.10%2B-blue?style=for-the-badge&logo=python) ![FastAPI](https://img.shields.io/badge/FastAPI-0.100%2B-green?style=for-the-badge&logo=fastapi) ![Docker](https://img.shields.io/badge/Docker-20.10%2B-blue?style=for-the-badge&logo=docker) ![MongoDB](https://img.shields.io/badge/MongoDB-4.4%2B-green?style=for-the-badge&logo=mongodb) ![Google Gemini Pro](https://img.shields.io/badge/Google%20Gemini%20Pro-blue?style=for-the-badge&logo=google)
 
 ## 1. Sobre o Projeto
 
@@ -39,7 +39,7 @@ O sistema foi desenhado com foco em modularidade e manutenibilidade, utilizando 
         5.  **Persistência:** Salva o relatório HTML final no banco de dados.
 
 3.  **Agente (`ReportGeneratorAgent`:
-    -   Um agente especializado que atua como uma interface com o LLM (OpenAI GPT-4).
+    -   Um agente especializado que atua como uma LLM (Google Gemini Pro).
     -   Recebe o **tipo de seção** a ser gerada e o **contexto base** do orquestrador.
     -   Carrega o **prompt específico** para a seção solicitada a partir do diretório `app/agents/prompts/sections/`.
     -   Formata o prompt final com os dados de contexto e o envia para o LLM.
@@ -80,7 +80,7 @@ Requisição HTTP (POST /reports/{student_id})
 - **Back-end:** Python 3.12
 - **Framework API:** FastAPI
 - **Banco de Dados:** MongoDB (com `motor` para operações assíncronas)
-- **IA & LLM:** OpenAI GPT-4
+- **IA & LLM:** Google Gemini Pro
 - **Containerização:** Docker & Docker Compose
 - **Análise de Dados:** `numpy`
 - **Testes:** `pytest` e `pytest-asyncio`
@@ -93,7 +93,7 @@ Requisição HTTP (POST /reports/{student_id})
 
 - Docker e Docker Compose instalados.
 - Python 3.10+ e `pip` para gerenciamento de pacotes.
-- Acesso a uma chave de API da OpenAI.
+- Acesso a uma chave de API do Google Gemini Pro.
 
 ### 4.2. Configuração do Ambiente
 
@@ -118,9 +118,8 @@ Requisição HTTP (POST /reports/{student_id})
     Crie um arquivo chamado `.env` na raiz do projeto e preencha com as seguintes variáveis:
 
     ```dotenv
-    # Chave de API da OpenAI
-    OPENAI_API_KEY="sk-xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
-
+    # Chave de API do Google Gemini Pro
+        GEMINI_API_KEY="sua_chave_de_api_aqui"
     # URI de conexão do MongoDB
     MONGO_URI="mongodb://localhost:27017/"
 
