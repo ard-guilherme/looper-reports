@@ -13,6 +13,21 @@ from app.agents.report_generator_agent import generate_report_section
 
 logger = logging.getLogger(__name__)
 
+MONTHS_PT = {
+    'January': 'Janeiro',
+    'February': 'Fevereiro',
+    'March': 'Março',
+    'April': 'Abril',
+    'May': 'Maio',
+    'June': 'Junho',
+    'July': 'Julho',
+    'August': 'Agosto',
+    'September': 'Setembro',
+    'October': 'Outubro',
+    'November': 'Novembro',
+    'December': 'Dezembro'
+}
+
 def _get_base_context(checkins: list, student: dict, past_reports: list, macro_goals: dict) -> str:
     """Analyzes all weekly data and formats it into a single string for the LLM prompt context."""
     daily_nutrition = [c.get('nutrition', {}) for c in checkins]
@@ -33,8 +48,9 @@ def _get_base_context(checkins: list, student: dict, past_reports: list, macro_g
     end_date = datetime.now(user_tz)
     start_date = end_date - timedelta(days=7)
     week_number = end_date.isocalendar()[1]
-    month_name = end_date.strftime("%B").capitalize()
-    week_str = f"Semana {week_number} de {month_name} {end_date.year} ({start_date.strftime('%d/%m')} - {end_date.strftime('%d/%m')})"
+    month_name_en = end_date.strftime("%B")
+    month_name_pt = MONTHS_PT.get(month_name_en, month_name_en)
+    week_str = f"Semana {week_number} de {month_name_pt} {end_date.year} ({start_date.strftime('%d/%m')} - {end_date.strftime('%d/%m')})"
 
     context = f"""
 ALUNO: {student.get('full_name', 'N/A')}
@@ -157,7 +173,10 @@ async def create_report_for_student(student_id: str, db: AsyncIOMotorDatabase) -
     with open(settings.REPORT_TEMPLATE_FILE, "r", encoding="utf-8") as f:
         report_html = f.read()
 
-    report_html = report_html.replace("{{student_name}}", student_data.get('name', 'N/A'))
+    month_name_en = end_date.strftime("%B")
+    month_name_pt = MONTHS_PT.get(month_name_en, month_name_en)
+
+    report_html = report_html.replace("{{student_name}}", student_data.get('full_name', 'N/A'))
     report_html = report_html.replace("{{week_string}}", f"Semana {end_date.isocalendar()[1]} ({start_date.strftime('%d/%m')} - {end_date.strftime('%d/%m')})")
     report_html = report_html.replace("{{overview_section}}", f"<p>{overview_content}</p>")
     report_html = report_html.replace("{{nutrition_analysis_section}}", nutrition_html_content)
@@ -168,7 +187,7 @@ async def create_report_for_student(student_id: str, db: AsyncIOMotorDatabase) -
     report_html = report_html.replace("{{recommendations_section}}", recommendations_html_content)
     report_html = report_html.replace("{{conclusion_section}}", conclusion_html_content)
     report_html = report_html.replace("{{next_week_string}}", f"Semana {end_date.isocalendar()[1] + 1}")
-    report_html = report_html.replace("{{generation_date}}", end_date.strftime("%d de %B de %Y"))
+    report_html = report_html.replace("{{generation_date}}", f"{end_date.day} de {month_name_pt} de {end_date.year}")
 
     new_report = {"student_id": student_obj_id, "generated_at": datetime.now(timezone.utc), "html_content": report_html}
     await db["relatorios"].insert_one(new_report)
@@ -194,7 +213,8 @@ async def _build_nutrition_section(checkins: list, macro_goals: dict, past_repor
     metrics_grid_2 = _build_consistency_metrics_grid(calorie_cv, days_on_protein_goal, len(calories))
     daily_table = _build_daily_nutrition_table(checkins)
     llm_insights = await generate_report_section("nutrition_analysis", base_context_for_llm)
-    return f"""{metrics_grid_1}
+    return f"""
+{metrics_grid_1}
 {metrics_grid_2}
 <h3>Distribuição Calórica Diária</h3>
 {daily_table}
@@ -222,7 +242,8 @@ def _build_main_metrics_grid(avg_cals, avg_prot, avg_carbs, avg_fats, prot_goal,
 
     prot_adherence = (avg_prot / prot_goal) * 100 if prot_goal > 0 else 0
 
-    return f"""<div class="metrics-grid">
+    return f"""
+<div class="metrics-grid">
 
         <div class="metric-item">
 
@@ -266,10 +287,11 @@ def _build_main_metrics_grid(avg_cals, avg_prot, avg_carbs, avg_fats, prot_goal,
 
         </div>
 
-    </div>"""
+    </div>""")
 
 def _build_consistency_metrics_grid(cv, days_on_goal, total_days) -> str:
-    return f"""<h3>Consistência Nutricional</h3>
+    return f"""
+<h3>Consistência Nutricional</h3>
     <div class="metrics-grid">
         <div class="metric-item">
             <div class="metric-label">Coeficiente de Variação</div>
@@ -288,7 +310,8 @@ def _build_daily_nutrition_table(checkins: list) -> str:
     for checkin in checkins:
         date = datetime.fromisoformat(checkin.get("checkin_date")).strftime("%d/%m (%a)")
         n = checkin.get("nutrition", {})
-        rows.append(f"""<tr>
+        rows.append(f"""
+<tr>
             <td>{date}</td>
             <td>{n.get('calories', 0)} kcal</td>
             <td>{n.get('protein', 0)}g</td>
@@ -297,7 +320,8 @@ def _build_daily_nutrition_table(checkins: list) -> str:
             <td><span class="positive">Meta</span></td>
         </tr>""")
     table_rows = "\n".join(rows)
-    return f"""<table>
+    return f"""
+<table>
         <thead>
             <tr><th>Data</th><th>Calorias</th><th>Proteína</th><th>Carbos</th><th>Gordura</th><th>Status</th></tr>
         </thead>
@@ -328,7 +352,8 @@ def _parse_previous_week_metrics(past_reports: list) -> dict:
 async def _build_sleep_analysis_section(checkins: list, base_context_for_llm: str) -> str:
     daily_table = _build_daily_sleep_table(checkins)
     llm_insights = await generate_report_section("sleep_analysis", base_context_for_llm)
-    return f"""{daily_table}
+    return f"""
+{daily_table}
 {llm_insights}"""
 
 def _build_daily_sleep_table(checkins: list) -> str:
@@ -338,7 +363,8 @@ def _build_daily_sleep_table(checkins: list) -> str:
         s = checkin.get("sleep", {})
         status = "Adequado" if s.get('sleep_duration_hours', 0) >= 7 else "Limite inferior"
         status_class = "positive" if status == "Adequado" else "warning"
-        rows.append(f"""<tr>
+        rows.append(f"""
+<tr>
             <td>{date}</td>
             <td>{s.get('sleep_duration_hours', 0):.1f}h</td>
             <td>{s.get('sleep_quality_rating', 0)}/5</td>
@@ -346,7 +372,8 @@ def _build_daily_sleep_table(checkins: list) -> str:
             <td><span class=\"{status_class}\">{status}</span></td>
         </tr>""")
     table_rows = "\n".join(rows)
-    return f"""<table>
+    return f"""
+<table>
         <thead>
             <tr><th>Data</th><th>Duração</th><th>Qualidade</th><th>Horário</th><th>Status</th></tr>
         </thead>
@@ -360,7 +387,8 @@ async def _build_training_analysis_section(checkins: list, base_context_for_llm:
     sessions_performed = len(training_checkins)
     total_sessions_expected = 5
     total_sets = _calculate_total_sets(checkins)
-    metrics_grid = f"""<div class="metrics-grid">
+    metrics_grid = f"""
+<div class="metrics-grid">
         <div class="metric-item">
             <div class="metric-label">Sessões Realizadas</div>
             <div class="metric-value">{sessions_performed}/{total_sessions_expected}</div>
@@ -374,7 +402,8 @@ async def _build_training_analysis_section(checkins: list, base_context_for_llm:
     </div>"""
     training_details_html = _build_training_details(training_checkins)
     llm_insights = await generate_report_section("training_analysis", base_context_for_llm)
-    return f"""{metrics_grid}
+    return f"""
+{metrics_grid}
 <h3>Detalhamento dos Treinos</h3>
 {training_details_html}
 {llm_insights}"""
@@ -428,7 +457,8 @@ def _build_training_details(checkins: list) -> str:
         if current_exercise:
             exercises_html += f"<strong>{current_exercise}</strong><br>"
 
-        details.append(f"""<div class="training-detail manter-junto">
+        details.append(f"""
+<div class="training-detail manter-junto">
             <strong>{training_name} ({date.strftime("%d/%m - %A")})</strong><br>
             <em>Principais exercícios:</em><br>
             {exercises_html}
@@ -469,21 +499,25 @@ def _build_score_cards_section(checkins: list, macro_goals: dict) -> str:
     if protein_adherence_days == total_nutrition_days and avg_proteins >= protein_goal * 0.95: nutri_score = 10; nutri_status_class = "positive"
     elif protein_adherence_days >= total_nutrition_days * 0.8: nutri_score = 8; nutri_status_class = "warning"
     else: nutri_score = 6; nutri_status_class = "critical"
-    rec_card = f"""<div class="score-card {rec_status_class}">
+    rec_card = f"""
+<div class="score-card {rec_status_class}">
         <div class="score-label">Recuperação</div>
         <div class="score-value">{rec_score}/10</div>
         <div class="score-detail">Sono: {avg_sleep_hours:.1f}h média<br>Qualidade: {avg_sleep_quality:.1f}/5<br>{days_less_than_6h} dias <6h</div>
     </div>"""
-    perf_card = f"""<div class="score-card {perf_status_class}">
+    perf_card = f"""
+<div class="score-card {perf_status_class}">
         <div class="score-label">Desempenho</div>
         <div class="score-value">{perf_score}/10</div>
         <div class="score-detail">Aderência: {training_adherence:.0f}%<br>{sessions_performed}/{total_sessions_expected} treinos realizados</div>
     </div>"""
-    nutri_card = f"""<div class="score-card {nutri_status_class}">
+    nutri_card = f"""
+<div class="score-card {nutri_status_class}">
         <div class="score-label">Alimentação</div>
         <div class="score-value">{nutri_score}/10</div>
         <div class="score-detail">Proteína: {avg_proteins:.0f}g média<br>Aderência: {protein_adherence_days}/{total_nutrition_days} dias<br>Meta: {protein_goal}g</div>
     </div>"""
-    return f"""{rec_card}
+    return f"""
+{rec_card}
 {perf_card}
 {nutri_card}"""
