@@ -1,94 +1,101 @@
-# Looper Reports AI
+# Looper Reports: Motor de Geração de Relatórios de Performance com IA
 
-Este projeto é um hub de automação para o sistema de coaching fitness Looper, focado na geração de relatórios de progresso para alunos usando IA com Gemini e LangChain.
+---
 
-## 1. Documentação Técnica
+![Python](https://img.shields.io/badge/Python-3.10%2B-blue?style=for-the-badge&logo=python) ![FastAPI](https://img.shields.io/badge/FastAPI-0.100%2B-green?style=for-the-badge&logo=fastapi) ![Docker](https://img.shields.io/badge/Docker-20.10%2B-blue?style=for-the-badge&logo=docker) ![MongoDB](https://img.shields.io/badge/MongoDB-4.4%2B-green?style=for-the-badge&logo=mongodb) ![OpenAI](https://img.shields.io/badge/OpenAI-GPT--4-blue?style=for-the-badge&logo=openai)
 
-### 1.1. Core Technologies
+## 1. Sobre o Projeto
 
-- **Backend Framework:** FastAPI
-- **Servidor ASGI:** Uvicorn
-- **Banco de Dados:** MongoDB (com driver assíncrono Motor)
-- **IA & Orquestração:** LangChain
-- **Modelo de Linguagem:** Google Gemini Pro
-- **Validação de Dados:** Pydantic
-- **Templates:** Jinja2
-- **Conversão de Markdown:** Markdown
+O **Looper Reports** é um sistema de back-end projetado para automatizar a criação de relatórios de progresso semanais para alunos de coaching de alta performance. O sistema consome dados brutos de diversas fontes (nutrição, sono, treinos) e os transforma em um relatório HTML detalhado, estilizado e repleto de insights, utilizando um motor de IA para análise e geração de texto.
 
-### 1.2. Arquitetura
+O objetivo principal é liberar o coach do trabalho manual de compilação e análise de dados, permitindo que ele se concentre na estratégia e no relacionamento com o aluno, ao mesmo tempo que entrega um produto de altíssima qualidade e valor percebido.
 
-Adotamos uma arquitetura em camadas (layered architecture) para promover a separação de conceitos e garantir a escalabilidade do projeto.
+### 1.1. Funcionalidades Principais
 
-- **Camada de Apresentação (API):** Interface RESTful criada com **FastAPI**. Responsável por receber as requisições HTTP, validar os dados de entrada e orquestrar as chamadas para a camada de serviço. Fica em `app/api/`.
+- **Geração de Relatório via API:** Um único endpoint que orquestra todo o processo.
+- **Análise de Múltiplas Fontes:** Agrega dados de check-ins diários, metas de longo prazo e relatórios anteriores.
+- **Motor de IA Modular:** Utiliza um padrão de Agente/Orquestrador para gerar cada seção do relatório de forma independente e especializada.
+- **Geração Baseada em Prompts:** A lógica de geração de cada seção é definida em arquivos de prompt de texto, permitindo fácil iteração e ajuste fino sem alterar o código.
+- **Template HTML:** O relatório final é montado a partir de um template HTML, garantindo consistência visual e separação entre conteúdo e apresentação.
 
-- **Camada de Serviço (Lógica de Negócio):** Módulos Python que contêm a lógica principal. O `ReportService` (`app/services/report_service.py`) é responsável por buscar os dados do aluno, invocar o agent de IA e renderizar o template HTML final.
+---
 
-- **Camada de Agents (IA Core):** Componentes dedicados que encapsulam a lógica da **LangChain**. O `ReportGeneratorAgent` (`app/agents/report_generator_agent.py`) possui o prompt, o modelo de linguagem (LLM) e a cadeia de execução para gerar o conteúdo do relatório.
+## 2. Arquitetura e Fluxo de Dados
 
-- **Camada de Acesso a Dados (Database):** Módulos responsáveis pela comunicação com o **MongoDB**. Usamos a biblioteca **Motor**, o driver assíncrono oficial, para não bloquear a event loop do FastAPI. A lógica de conexão e os modelos de dados Pydantic ficam em `app/db/`.
+O sistema foi desenhado com foco em modularidade e manutenibilidade, utilizando um padrão de **Orquestrador-Agente**.
 
-### 1.3. Estrutura de Diretórios
+### 2.1. Componentes
+
+1.  **API (FastAPI):**
+    -   Expõe o endpoint principal (`/reports/{student_id}`) que dispara a geração do relatório.
+    -   Responsável pela validação da requisição e por injetar as dependências necessárias (como a conexão com o banco de dados).
+
+2.  **Orquestrador (`ReportService`:
+    -   É o cérebro do sistema. Ao ser chamado pela API, ele executa as seguintes etapas:
+        1.  **Coleta de Dados:** Busca no MongoDB todos os dados relevantes para a semana do aluno (check-ins, metas, relatórios passados).
+        2.  **Construção de Contexto:** Processa e analisa os dados brutos, criando um "super-prompt" ou contexto base que será o alicerce para todas as chamadas de IA.
+        3.  **Coordenação de Agentes:** Invoca o `ReportGeneratorAgent` sequencialmente para cada seção do relatório (visão geral, nutrição, sono, etc.).
+        4.  **Montagem do HTML:** Pega o conteúdo gerado por cada agente e o insere no template HTML principal.
+        5.  **Persistência:** Salva o relatório HTML final no banco de dados.
+
+3.  **Agente (`ReportGeneratorAgent`:
+    -   Um agente especializado que atua como uma interface com o LLM (OpenAI GPT-4).
+    -   Recebe o **tipo de seção** a ser gerada e o **contexto base** do orquestrador.
+    -   Carrega o **prompt específico** para a seção solicitada a partir do diretório `app/agents/prompts/sections/`.
+    -   Formata o prompt final com os dados de contexto e o envia para o LLM.
+    -   Retorna o texto (HTML) gerado pelo LLM para o orquestrador.
+
+### 2.2. Fluxo de Dados
 
 ```
-looper-reports/
-├── app/                  # Código fonte da aplicação
-│   ├── api/              # Módulos da API (endpoints, roteadores)
-│   ├── agents/           # Lógica dos agents de IA com LangChain
-│   ├── core/             # Configurações globais da aplicação
-│   ├── db/               # Conexão com o banco e modelos de dados
-│   ├── services/         # Lógica de negócio
-│   └── templates/        # Templates HTML (Jinja2)
-├── .env                  # Arquivo para variáveis de ambiente (não versionado)
-├── main.py               # Ponto de entrada da aplicação FastAPI
-└── requirements.txt      # Dependências do projeto
+Requisição HTTP (POST /reports/{student_id})
+        |
+        v
++--------------------+
+| API (FastAPI)      |
++--------------------+ 
+        |
+        v
++-----------------------------+
+| Orquestrador (ReportService) |
++-----------------------------+
+        |         ^         
+        |         | (HTML de cada seção)
+        v         |
++----------------+  +-----------------------------+
+| MongoDB        |  | Agente (ReportGeneratorAgent) |
+| (Coleta de Dados)|
++----------------+          |         ^ (Texto gerado)
+                          |
+                          v         |
+                  +---------------------+
+                  | LLM (OpenAI GPT-4)  |
+                  +---------------------+
 ```
 
-### 1.4. Fluxo de Geração de Relatório (End-to-End)
+---
 
-1.  **Requisição:** Um cliente envia uma requisição `POST` para o endpoint `/api/v1/reports/generate/{student_id}`.
-2.  **API Endpoint:** O endpoint em `app/api/v1/endpoints/reports.py` recebe a chamada e, usando injeção de dependência, invoca o `ReportService`.
-3.  **Busca de Dados (Service):** O `ReportService` (`app/services/report_service.py`) busca os dados do aluno no banco de dados `mario_bot_db`:
-    - Busca o perfil do aluno na coleção `students`.
-    - Busca os **check-ins dos últimos 7 dias** na coleção `checkins`. Estes documentos são a fonte principal para dados diários de treino, sono e nutrição.
-    - Busca os 2 últimos relatórios na coleção `relatorios` para extrair dados comparativos da semana anterior.
-4.  **Formatação do Prompt (Service):** Esta é uma etapa crucial. O serviço processa os dados brutos para montar uma única string de texto que servirá de contexto para o LLM:
-    - **Dados de Treino:** A função `_parse_training_journal` lê a string `training_journal` de cada check-in, extrai os exercícios e séries, e os formata.
-    - **Dados de Nutrição e Sono:** Funções auxiliares extraem os dados de `nutrition` e `sleep` de cada check-in e os formatam.
-    - **Dados da Semana Anterior:** A função `_format_previous_week_data` usa a biblioteca **BeautifulSoup** para parsear o conteúdo HTML do relatório mais recente e extrair as métricas de comparação (calorias, volume de treino, etc.).
-    - Todos os dados formatados são inseridos em uma estrutura de texto definida pelo `prompt_template.txt`.
-5.  **Invocação do Agent (Service):** O serviço passa a string do prompt, agora rica em contexto, para o `ReportGeneratorAgent`.
-6.  **Geração de Conteúdo (Agent):** O `ReportGeneratorAgent` (`app/agents/report_generator_agent.py`) insere a string no `PromptTemplate` (carregado de `app/agents/prompts/report_prompt.txt`), envia a requisição para a API do Gemini e instrui o modelo a gerar o **HTML completo e final** do relatório, já com todos os placeholders preenchidos.
-7.  **Salvamento do Relatório (Service):** O serviço cria um novo documento com o ID do aluno, a data de geração e o conteúdo HTML final recebido do agent, e o **salva na coleção `relatorios`**.
-8.  **Resposta:** O endpoint da API retorna a `HTMLResponse` com o relatório recém-gerado para o cliente.
+## 3. Tecnologias Utilizadas
 
-## 2. Guia de Uso e Instalação
+- **Back-end:** Python 3.12
+- **Framework API:** FastAPI
+- **Banco de Dados:** MongoDB (com `motor` para operações assíncronas)
+- **IA & LLM:** OpenAI GPT-4
+- **Containerização:** Docker & Docker Compose
+- **Análise de Dados:** `numpy`
+- **Testes:** `pytest` e `pytest-asyncio`
 
-### 2.1. Executando com Docker (Recomendado)
+---
 
-**Pré-requisitos:**
-- Docker e Docker Compose
+## 4. Guia de Instalação e Execução
 
-1.  **Configure as variáveis de ambiente:**
-    - Crie um arquivo `.env` na raiz do projeto.
-    - Preencha as variáveis, especialmente `GEMINI_API_KEY` e `MONGO_CONNECTION_STRING` (que deve apontar para o seu MongoDB Atlas).
+### 4.1. Pré-requisitos
 
-2.  **Execute o script de deploy:**
-    ```bash
-    ./deploy.sh
-    ```
-    Isso irá construir a imagem da API e iniciar o container em background.
+- Docker e Docker Compose instalados.
+- Python 3.10+ e `pip` para gerenciamento de pacotes.
+- Acesso a uma chave de API da OpenAI.
 
-3.  **Para parar o container:**
-    ```bash
-    docker-compose down
-    ```
-
-### 2.2. Executando Localmente (Sem Docker)
-
-**Pré-requisitos:**
-- Python 3.10+
-- Git
-- Uma instância do MongoDB acessível (local ou Atlas)
+### 4.2. Configuração do Ambiente
 
 1.  **Clone o repositório:**
     ```bash
@@ -98,9 +105,8 @@ looper-reports/
 
 2.  **Crie e ative um ambiente virtual:**
     ```bash
-    python3 -m venv venv
+    python -m venv venv
     source venv/bin/activate
-    # No Windows, use: venv\Scripts\activate
     ```
 
 3.  **Instale as dependências:**
@@ -108,15 +114,61 @@ looper-reports/
     pip install -r requirements.txt
     ```
 
-4.  **Configure as variáveis de ambiente:**
-    - Crie um arquivo `.env` e preencha as variáveis. A `MONGO_CONNECTION_STRING` deve apontar para o seu MongoDB (ex: `mongodb://localhost:27017/looper_db` ou sua string do Atlas).
+4.  **Crie o arquivo de ambiente (`.env`):**
+    Crie um arquivo chamado `.env` na raiz do projeto e preencha com as seguintes variáveis:
 
-### 2.3. Como Usar
+    ```dotenv
+    # Chave de API da OpenAI
+    OPENAI_API_KEY="sk-xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
 
-Para gerar um relatório, envie uma requisição `POST` para o seguinte endpoint:
+    # URI de conexão do MongoDB
+    MONGO_URI="mongodb://localhost:27017/"
 
-`POST /api/v1/reports/generate/{student_id}`
+    # Nome do banco de dados
+    DB_NAME="gcoach_dev"
 
-Onde `{student_id}` é o ID do aluno no MongoDB.
+    # Caminho para o template do relatório
+    REPORT_TEMPLATE_FILE="app/templates/report_template.html"
+    ```
 
-A resposta será um HTML com o relatório gerado.
+### 4.3. Executando a Aplicação
+
+O `docker-compose` orquestra tanto o serviço da aplicação quanto o banco de dados MongoDB.
+
+```bash
+docker-compose up --build
+```
+
+A API estará disponível em `http://localhost:8000/docs` para interação.
+
+---
+
+## 5. Como Usar
+
+Para gerar um relatório, envie uma requisição `POST` para o endpoint `/api/v1/reports/{student_id}`.
+
+**Exemplo com `curl`:**
+
+```bash
+curl -X POST http://localhost:8000/api/v1/reports/60d5ec49c3a3a4e6c8b45678 \
+-H "Content-Type: application/json" \
+-o relatorio_gerado.html
+```
+
+Onde `60d5ec49c3a3a4e6c8b45678` é o `ObjectId` do aluno no banco de dados. O comando salvará o HTML do relatório gerado no arquivo `relatorio_gerado.html`.
+
+---
+
+## 6. Testes
+
+O projeto utiliza `pytest` para garantir a qualidade e a estabilidade do código. Os testes estão focados em validar o fluxo de orquestração do `ReportService`, mockando as chamadas ao banco de dados e ao LLM para garantir que a lógica de montagem do relatório está correta.
+
+Para executar os testes:
+
+```bash
+# Certifique-se de que o ambiente virtual está ativado
+source venv/bin/activate
+
+# Execute o pytest
+pytest
+```
