@@ -133,6 +133,7 @@ async def create_report_for_student(student_id: str, db: AsyncIOMotorDatabase) -
     training_html_content = await _build_training_analysis_section(checkins_data, base_context)
     score_cards_html_content = _build_score_cards_section(checkins_data, macro_goals_data)
     detailed_insights_html_content = await generate_report_section("detailed_insights", base_context)
+    recommendations_html_content = await generate_report_section("recommendations", base_context)
 
     with open(settings.REPORT_TEMPLATE_FILE, "r", encoding="utf-8") as f:
         report_html = f.read()
@@ -145,8 +146,8 @@ async def create_report_for_student(student_id: str, db: AsyncIOMotorDatabase) -
     report_html = report_html.replace("{{training_analysis_section}}", training_html_content)
     report_html = report_html.replace("{{score_cards}}", score_cards_html_content)
     report_html = report_html.replace("{{detailed_insights_section}}", detailed_insights_html_content)
+    report_html = report_html.replace("{{recommendations_section}}", recommendations_html_content)
     
-    report_html = report_html.replace("{{recommendations_section}}", "<!-- Recommendations to be implemented -->")
     report_html = report_html.replace("{{conclusion_section}}", "<!-- Conclusion to be implemented -->")
     report_html = report_html.replace("{{next_week_string}}", f"Semana {end_date.isocalendar()[1] + 1}")
     report_html = report_html.replace("{{generation_date}}", end_date.strftime("%d de %B de %Y"))
@@ -175,46 +176,79 @@ async def _build_nutrition_section(checkins: list, macro_goals: dict, past_repor
     metrics_grid_2 = _build_consistency_metrics_grid(calorie_cv, days_on_protein_goal, len(calories))
     daily_table = _build_daily_nutrition_table(checkins)
     llm_insights = await generate_report_section("nutrition_analysis", base_context_for_llm)
-    return f"""{metrics_grid_1}
+    return f"""
+{metrics_grid_1}
 {metrics_grid_2}
 <h3>Distribuição Calórica Diária</h3>
 {daily_table}
 {llm_insights}"""
 
 def _build_main_metrics_grid(avg_cals, avg_prot, avg_carbs, avg_fats, prot_goal, prev_metrics) -> str:
+
     def get_comparison_html(current, previous, unit='kcal', invert_color=False):
+
         if previous == 0: return ""
+
         diff = current - previous
+
         perc_diff = (diff / previous) * 100
+
         color = 'positive' if (diff > 0 and not invert_color) or (diff < 0 and invert_color) else 'critical'
+
         sign = '+' if diff > 0 else ''
-        return f"<div class=\"metric-comparison\">vs. semana anterior: <span class=\"{color}\">{sign}{diff:.0f} {unit} ({sign}{perc_diff:.1f}%)</span></div>"
+
+        return f'<div class="metric-comparison">vs. semana anterior: <span class="{color}">{sign}{diff:.0f} {unit} ({sign}{perc_diff:.1f}%)</span></div>'
+
     cal_comp = get_comparison_html(avg_cals, prev_metrics.get('calories', 0), unit='kcal', invert_color=True)
+
     prot_comp = get_comparison_html(avg_prot, prev_metrics.get('protein', 0), unit='g')
+
     prot_adherence = (avg_prot / prot_goal) * 100 if prot_goal > 0 else 0
-    return f"""
-<div class="metrics-grid">
+
+    return f"""<div class="metrics-grid">
+
         <div class="metric-item">
+
             <div class="metric-label">Calorias Médias</div>
+
             <div class="metric-value">{avg_cals:.0f} kcal</div>
+
             {cal_comp}
+
         </div>
+
         <div class="metric-item">
+
             <div class="metric-label">Proteína Média</div>
+
             <div class="metric-value">{avg_prot:.0f}g</div>
+
             <div class="metric-comparison">Meta: {prot_goal:.0f}g | <span class="positive">{prot_adherence:.1f}%</span></div>
+
             {prot_comp}
+
         </div>
+
         <div class="metric-item">
+
             <div class="metric-label">Carboidratos Médios</div>
+
             <div class="metric-value">{avg_carbs:.0f}g</div>
+
             <div class="metric-comparison">{avg_carbs*4/avg_cals*100 if avg_cals > 0 else 0:.0f}% das calorias totais</div>
+
         </div>
+
         <div class="metric-item">
+
             <div class="metric-label">Gordura Média</div>
+
             <div class="metric-value">{avg_fats:.0f}g</div>
+
             <div class="metric-comparison">{avg_fats*9/avg_cals*100 if avg_cals > 0 else 0:.0f}% das calorias totais</div>
+
         </div>
+
     </div>"""
 
 def _build_consistency_metrics_grid(cv, days_on_goal, total_days) -> str:

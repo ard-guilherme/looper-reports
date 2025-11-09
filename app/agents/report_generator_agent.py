@@ -13,6 +13,7 @@ PROMPT_FILES = {
     "sleep_analysis": "sections/sleep_analysis_prompt.txt",
     "training_analysis": "sections/training_analysis_prompt.txt",
     "detailed_insights": "sections/detailed_insights_prompt.txt",
+    "recommendations": "sections/recommendations_prompt.txt",
 }
 
 async def generate_report_section(section_type: str, context_data: str, temperature: float = 0.7) -> str:
