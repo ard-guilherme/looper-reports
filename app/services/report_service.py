@@ -132,6 +132,7 @@ async def create_report_for_student(student_id: str, db: AsyncIOMotorDatabase) -
     sleep_html_content = await _build_sleep_analysis_section(checkins_data, base_context)
     training_html_content = await _build_training_analysis_section(checkins_data, base_context)
     score_cards_html_content = _build_score_cards_section(checkins_data, macro_goals_data)
+    detailed_insights_html_content = await generate_report_section("detailed_insights", base_context)
 
     with open(settings.REPORT_TEMPLATE_FILE, "r", encoding="utf-8") as f:
         report_html = f.read()
@@ -143,8 +144,8 @@ async def create_report_for_student(student_id: str, db: AsyncIOMotorDatabase) -
     report_html = report_html.replace("{{sleep_analysis_section}}", sleep_html_content)
     report_html = report_html.replace("{{training_analysis_section}}", training_html_content)
     report_html = report_html.replace("{{score_cards}}", score_cards_html_content)
+    report_html = report_html.replace("{{detailed_insights_section}}", detailed_insights_html_content)
     
-    report_html = report_html.replace("{{detailed_insights_section}}", "<!-- Detailed insights to be implemented -->")
     report_html = report_html.replace("{{recommendations_section}}", "<!-- Recommendations to be implemented -->")
     report_html = report_html.replace("{{conclusion_section}}", "<!-- Conclusion to be implemented -->")
     report_html = report_html.replace("{{next_week_string}}", f"Semana {end_date.isocalendar()[1] + 1}")
@@ -174,8 +175,7 @@ async def _build_nutrition_section(checkins: list, macro_goals: dict, past_repor
     metrics_grid_2 = _build_consistency_metrics_grid(calorie_cv, days_on_protein_goal, len(calories))
     daily_table = _build_daily_nutrition_table(checkins)
     llm_insights = await generate_report_section("nutrition_analysis", base_context_for_llm)
-    return f"""
-{metrics_grid_1}
+    return f"""{metrics_grid_1}
 {metrics_grid_2}
 <h3>Distribuição Calórica Diária</h3>
 {daily_table}
@@ -294,7 +294,7 @@ def _build_daily_sleep_table(checkins: list) -> str:
             <td>{s.get('sleep_duration_hours', 0):.1f}h</td>
             <td>{s.get('sleep_quality_rating', 0)}/5</td>
             <td>{s.get('sleep_start_time', '--:--')} - {s.get('sleep_end_time', '--:--')}</td>
-            <td><span class=\" {status_class}\">{status}</span></td>
+            <td><span class=\" {status_class}">{status}</span></td>
         </tr>""")
     table_rows = "\n".join(rows)
     return f"""
@@ -358,8 +358,6 @@ def _build_training_details(checkins: list) -> str:
     return "\n".join(details)
 
 def _build_score_cards_section(checkins: list, macro_goals: dict) -> str:
-    # 1. Calculate metrics for each score card
-    # Recuperação (Sleep)
     daily_sleep = [c.get('sleep', {}) for c in checkins]
     sleep_hours = [s.get('sleep_duration_hours', 0) for s in daily_sleep if s.get('sleep_duration_hours', 0) > 0]
     avg_sleep_hours = np.mean(sleep_hours) if sleep_hours else 0
@@ -367,13 +365,11 @@ def _build_score_cards_section(checkins: list, macro_goals: dict) -> str:
     avg_sleep_quality = np.mean(sleep_quality) if sleep_quality else 0
     days_less_than_6h = sum(1 for s in sleep_hours if s < 6)
 
-    # Desempenho (Training)
     training_checkins = [c for c in checkins if c.get('training', {}).get('training_journal')]
     sessions_performed = len(training_checkins)
-    total_sessions_expected = 5 # Assuming 5 sessions per week
+    total_sessions_expected = 5
     training_adherence = (sessions_performed / total_sessions_expected) * 100 if total_sessions_expected > 0 else 0
 
-    # Alimentação (Nutrition)
     daily_nutrition = [c.get('nutrition', {}) for c in checkins]
     proteins = [n.get('protein', 0) for n in daily_nutrition if n.get('protein', 0) > 0]
     protein_goal = macro_goals.get('protein', 1)
@@ -381,29 +377,24 @@ def _build_score_cards_section(checkins: list, macro_goals: dict) -> str:
     protein_adherence_days = sum(1 for p in proteins if abs(p - protein_goal) <= 10)
     total_nutrition_days = len(proteins)
 
-    # 2. Determine score and status class
-    # Recuperação Score
     rec_score = 0
     rec_status_class = "critical"
     if avg_sleep_hours >= 7 and avg_sleep_quality >= 4 and days_less_than_6h == 0: rec_score = 9; rec_status_class = "positive"
     elif avg_sleep_hours >= 6.5 and avg_sleep_quality >= 3.5 and days_less_than_6h <= 1: rec_score = 7; rec_status_class = "warning"
     else: rec_score = 5; rec_status_class = "critical"
 
-    # Desempenho Score
     perf_score = 0
     perf_status_class = "critical"
     if training_adherence >= 100: perf_score = 10; perf_status_class = "positive"
     elif training_adherence >= 80: perf_score = 8; perf_status_class = "warning"
     else: perf_score = 6; perf_status_class = "critical"
 
-    # Alimentação Score
     nutri_score = 0
     nutri_status_class = "critical"
     if protein_adherence_days == total_nutrition_days and avg_proteins >= protein_goal * 0.95: nutri_score = 10; nutri_status_class = "positive"
     elif protein_adherence_days >= total_nutrition_days * 0.8: nutri_score = 8; nutri_status_class = "warning"
     else: nutri_score = 6; nutri_status_class = "critical"
 
-    # 3. Build HTML for each card
     rec_card = f"""
 <div class="score-card {rec_status_class}">
         <div class="score-label">Recuperação</div>

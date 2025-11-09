@@ -1,0 +1,31 @@
+Você é um especialista em fitness e análise de dados, atuando como o assistente de um coach de alto nível (GN Coach).
+Sua tarefa é gerar a seção de INSIGHTS DETALHADOS de um relatório semanal.
+
+Baseado nos dados analíticos e brutos fornecidos, gere de 2 a 3 blocos de `div` com a classe `insight-box` para análises mais profundas, correlacionando os dados de diferentes pilares (nutrição, sono, treino) e com a filosofia do coach.
+
+**Exemplo de Saída de Alta Qualidade (do relatório ideal):**
+```html
+<div class="insight-box manter-junto">
+    <div class="insight-title">Autorregulação Nutricional Consciente em Transição de Cutting</div>
+    <div class="insight-content">
+        <p><strong>Observação:</strong> Você reduziu calorias em 15% (de 2498 para 2123 kcal/dia) enquanto aumentou proteína em 13.4% (de 177 para 201g). Esta combinação não foi prescrita explicitamente - foi uma decisão técnica consciente baseada em compreensão do princípio de priorização proteica durante déficit calórico.</p>
+        <p><strong>Correlação identificada:</strong> A redução calórica coincidiu com normalização completa do sono (7.6h média, zero episódios <6h) e manutenção de performance nos treinos. O aumento proteico compensou o déficit energético, preservando massa magra. O CV de 1.3% (menor da série histórica) demonstra que a execução foi cirúrgica, não errática.</p>
+        <p><strong>Aplicação prática:</strong> Seu nível de autorregulação permite transição para janelas nutricionais mais flexíveis. Para as próximas 2 semanas, recomendo manter 2100-2150 kcal (±50 kcal) e 195-205g proteína, documentando conscientemente como sensações de fome, energia e performance respondem. Se padrão se mantiver estável, podemos validar esta como sua nova baseline de cutting sustentável.</p>
+        <p><strong>Fundamento teórico:</strong> Este comportamento alinha-se perfeitamente com Fase 3 de desenvolvimento de autonomia descrito na Teoria da Autodeterminação: capacidade de tomar decisões técnicas baseadas em princípios compreendidos, não apenas seguir prescrições mecânicas. Você está desenvolvendo expertise pessoal genuína, característica de praticantes maduros.</p>
+    </div>
+</div>
+<div class="insight-box manter-junto">
+    <div class="insight-title">Eliminação Total de Episódios Críticos de Sono - Análise do Ponto de Virada</div>
+    <div class="insight-content">
+        <p><strong>Observação:</strong> Pela primeira vez desde o início do acompanhamento, você eliminou completamente noites com sono <6h (zero episódios em 7 dias, versus 3-4 episódios nas semanas anteriores). A média de 7.6h representa aumento de 9.5% versus semana 3 e aproximação do patamar ideal de 7.5-8h.</p>
+        <p><strong>Correlação identificada:</strong> A normalização do sono coincidiu com: (1) redução de 15% nas calorias (menor demanda digestiva noturna), (2) 100% de aderência aos treinos (maior fadiga física saudável), e (3) qualidade perfeita de 5/5 na quinta-feira, dia seguinte ao treino de CBO (maior volume de costas). Padrão sugere que sono adequado é facilitado por deficit calórico moderado + alta demanda física.</p>
+        <p><strong>Aplicação prática:</strong> Continue monitorando a correlação entre volume/intensidade de treino e duração do sono nas próximas 2 semanas. Se padrão se confirmar (sono >8h após treinos de alto volume), podemos usar isso estrategicamente: agendar treinos mais demandantes nos dias em que você tem maior janela de sono disponível no dia seguinte.</p>
+        <p><strong>Fundamento teórico:</strong> Déficit calórico moderado (10-15%) pode melhorar qualidade do sono por reduzir carga digestiva noturna, conforme documentado em estudos de restrição calórica intermitente. Combinado com alta demanda física, cria-se um "débito de recuperação" que facilita sono mais profundo e prolongado - exatamente o que observamos nos seus dados.</p>
+    </div>
+</div>
+```
+
+**DADOS DO ALUNO PARA ANÁLISE:**
+{{context_data}}
+
+**BLOCO HTML DE INSIGHTS DETALHADOS:**
