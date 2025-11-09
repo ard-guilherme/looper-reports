@@ -134,6 +134,7 @@ async def create_report_for_student(student_id: str, db: AsyncIOMotorDatabase) -
     score_cards_html_content = _build_score_cards_section(checkins_data, macro_goals_data)
     detailed_insights_html_content = await generate_report_section("detailed_insights", base_context)
     recommendations_html_content = await generate_report_section("recommendations", base_context)
+    conclusion_html_content = await generate_report_section("conclusion", base_context)
 
     with open(settings.REPORT_TEMPLATE_FILE, "r", encoding="utf-8") as f:
         report_html = f.read()
@@ -147,8 +148,7 @@ async def create_report_for_student(student_id: str, db: AsyncIOMotorDatabase) -
     report_html = report_html.replace("{{score_cards}}", score_cards_html_content)
     report_html = report_html.replace("{{detailed_insights_section}}", detailed_insights_html_content)
     report_html = report_html.replace("{{recommendations_section}}", recommendations_html_content)
-    
-    report_html = report_html.replace("{{conclusion_section}}", "<!-- Conclusion to be implemented -->")
+    report_html = report_html.replace("{{conclusion_section}}", conclusion_html_content)
     report_html = report_html.replace("{{next_week_string}}", f"Semana {end_date.isocalendar()[1] + 1}")
     report_html = report_html.replace("{{generation_date}}", end_date.strftime("%d de %B de %Y"))
 

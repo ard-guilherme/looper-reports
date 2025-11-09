@@ -98,6 +98,8 @@ async def test_create_report_orchestration_flow():
                 return "<p>Insights detalhados gerados pelo LLM.</p>"
             elif section_type == "recommendations":
                 return "<p>Recomendações geradas pelo LLM.</p>"
+            elif section_type == "conclusion":
+                return "<p>Conclusão gerada pelo LLM.</p>"
             return ""
         
         with patch("app.services.report_service.generate_report_section", new_callable=AsyncMock) as mock_generate_section:
@@ -108,19 +110,20 @@ async def test_create_report_orchestration_flow():
 
             # Assert
             # 1. Check that the correct agents were called
-            assert mock_generate_section.call_count == 6
+            assert mock_generate_section.call_count == 7
             assert mock_generate_section.call_args_list[0].args[0] == "overview"
             assert mock_generate_section.call_args_list[1].args[0] == "nutrition_analysis"
             assert mock_generate_section.call_args_list[2].args[0] == "sleep_analysis"
             assert mock_generate_section.call_args_list[3].args[0] == "training_analysis"
             assert mock_generate_section.call_args_list[4].args[0] == "detailed_insights"
             assert mock_generate_section.call_args_list[5].args[0] == "recommendations"
+            assert mock_generate_section.call_args_list[6].args[0] == "conclusion"
 
             # 2. Check that the template was populated correctly
-            assert "<p>Recomendações geradas pelo LLM.</p>" in final_html
+            assert "<p>Conclusão gerada pelo LLM.</p>" in final_html
             
-            # 3. Check that other sections are placeholder comments
-            assert "<!-- Conclusion to be implemented -->" in final_html
+            # 3. Check that no sections are placeholder comments
+            assert "<!--" not in final_html
             
             # 4. Check that the report was saved
             mock_relatorios_collection.insert_one.assert_called_once()
