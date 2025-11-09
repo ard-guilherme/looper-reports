@@ -53,10 +53,12 @@ def _get_base_context(checkins: list, student: dict, past_reports: list, macro_g
     week_str = f"Semana {week_number} de {month_name_pt} {end_date.year} ({start_date.strftime('%d/%m')} - {end_date.strftime('%d/%m')})"
 
     context = f"""
+# CONTEXTO BASE - DADOS BRUTOS E ANÁLISE PRELIMINAR
+
 ALUNO: {student.get('full_name', 'N/A')}
 SEMANA: {week_str}
 
-# DADOS BRUTOS DA SEMANA
+## DADOS BRUTOS DA SEMANA
 TREINOS:
 {_format_training_data(checkins)}
 NUTRIÇÃO DIÁRIA:
@@ -64,22 +66,22 @@ NUTRIÇÃO DIÁRIA:
 SONO DIÁRIO:
 {_format_sleep_data(checkins)}
 
-# DADOS ANALÍTICOS
-## RESUMO NUTRICIONAL
+## DADOS ANALÍTICOS
+### RESUMO NUTRICIONAL
 - Calorias Médias: {avg_calories:.0f} kcal
 - Proteína Média: {avg_proteins:.0f}g (Meta: {protein_goal}g, Aderência: {protein_adherence:.0f}%)
 - Coeficiente de Variação (Calorias): {calorie_cv:.1f}%
 
-## RESUMO SONO
+### RESUMO SONO
 - Média de Sono: {avg_sleep_hours:.1f} horas/noite
 
-## RESUMO TREINO
+### RESUMO TREINO
 - Volume Total (Séries): {total_sets} séries
 
 ## DADOS SEMANA ANTERIOR (para comparação):
 {previous_week_data}
 
-CONTEXTO ADICIONAL:
+CONTEXTO ADICIONAL DO ALUNO:
 {student.get('additional_context', 'Nenhum contexto adicional fornecido.')}
 """
     return context
@@ -159,16 +161,31 @@ async def create_report_for_student(student_id: str, db: AsyncIOMotorDatabase) -
     past_reports_data = await db["relatorios"].find({"student_id": student_obj_id}).sort("generated_at", -1).limit(1).to_list(length=1)
     logger.info(f"Data fetched for student_id: {student_id}. Found {len(checkins_data)} check-ins.")
 
-    base_context = _get_base_context(checkins_data, student_data, past_reports_data, macro_goals_data)
+    # --- Início do Contexto Encadeado ---
+    chained_context = _get_base_context(checkins_data, student_data, past_reports_data, macro_goals_data)
 
-    overview_content = await generate_report_section("overview", base_context)
-    nutrition_html_content = await _build_nutrition_section(checkins_data, macro_goals_data, past_reports_data, base_context)
-    sleep_html_content = await _build_sleep_analysis_section(checkins_data, base_context)
-    training_html_content = await _build_training_analysis_section(checkins_data, base_context)
+    overview_content = await generate_report_section("overview", chained_context)
+    chained_context += f"\n\n# SEÇÃO GERADA: Visão Geral da Semana\n{overview_content}"
+
+    nutrition_html_content = await _build_nutrition_section(checkins_data, macro_goals_data, past_reports_data, chained_context)
+    chained_context += f"\n\n# SEÇÃO GERADA: Análise Nutricional\n{nutrition_html_content}"
+
+    sleep_html_content = await _build_sleep_analysis_section(checkins_data, chained_context)
+    chained_context += f"\n\n# SEÇÃO GERADA: Análise de Sono e Recuperação\n{sleep_html_content}"
+
+    training_html_content = await _build_training_analysis_section(checkins_data, chained_context)
+    chained_context += f"\n\n# SEÇÃO GERADA: Desempenho nos Treinos\n{training_html_content}"
+
     score_cards_html_content = _build_score_cards_section(checkins_data, macro_goals_data)
-    detailed_insights_html_content = await generate_report_section("detailed_insights", base_context)
-    recommendations_html_content = await generate_report_section("recommendations", base_context)
-    conclusion_html_content = await generate_report_section("conclusion", base_context)
+
+    detailed_insights_html_content = await generate_report_section("detailed_insights", chained_context)
+    chained_context += f"\n\n# SEÇÃO GERADA: Insights Detalhados\n{detailed_insights_html_content}"
+
+    recommendations_html_content = await generate_report_section("recommendations", chained_context)
+    chained_context += f"\n\n# SEÇÃO GERADA: Recomendações e Ajustes\n{recommendations_html_content}"
+
+    conclusion_html_content = await generate_report_section("conclusion", chained_context)
+    # --- Fim do Contexto Encadeado ---
 
     with open(settings.REPORT_TEMPLATE_FILE, "r", encoding="utf-8") as f:
         report_html = f.read()
@@ -195,7 +212,7 @@ async def create_report_for_student(student_id: str, db: AsyncIOMotorDatabase) -
 
     return report_html
 
-async def _build_nutrition_section(checkins: list, macro_goals: dict, past_reports: list, base_context_for_llm: str) -> str:
+async def _build_nutrition_section(checkins: list, macro_goals: dict, past_reports: list, chained_context: str) -> str:
     daily_nutrition = [c.get('nutrition', {}) for c in checkins]
     calories = [n.get('calories', 0) for n in daily_nutrition if n.get('calories', 0) > 0]
     proteins = [n.get('protein', 0) for n in daily_nutrition if n.get('protein', 0) > 0]
@@ -212,7 +229,7 @@ async def _build_nutrition_section(checkins: list, macro_goals: dict, past_repor
     metrics_grid_1 = _build_main_metrics_grid(avg_calories, avg_proteins, avg_carbs, avg_fats, protein_goal, prev_week_metrics)
     metrics_grid_2 = _build_consistency_metrics_grid(calorie_cv, days_on_protein_goal, len(calories))
     daily_table = _build_daily_nutrition_table(checkins)
-    llm_insights = await generate_report_section("nutrition_analysis", base_context_for_llm)
+    llm_insights = await generate_report_section("nutrition_analysis", chained_context)
     return f"""
 {metrics_grid_1}
 {metrics_grid_2}
@@ -287,7 +304,7 @@ def _build_main_metrics_grid(avg_cals, avg_prot, avg_carbs, avg_fats, prot_goal,
 
         </div>
 
-    </div>""")
+    </div>"""
 
 def _build_consistency_metrics_grid(cv, days_on_goal, total_days) -> str:
     return f"""
@@ -311,7 +328,7 @@ def _build_daily_nutrition_table(checkins: list) -> str:
         date = datetime.fromisoformat(checkin.get("checkin_date")).strftime("%d/%m (%a)")
         n = checkin.get("nutrition", {})
         rows.append(f"""
-<tr>
+t<tr>
             <td>{date}</td>
             <td>{n.get('calories', 0)} kcal</td>
             <td>{n.get('protein', 0)}g</td>
@@ -349,9 +366,9 @@ def _parse_previous_week_metrics(past_reports: list) -> dict:
         logger.error(f"Error parsing previous report for metrics: {e}")
         return {}
 
-async def _build_sleep_analysis_section(checkins: list, base_context_for_llm: str) -> str:
+async def _build_sleep_analysis_section(checkins: list, chained_context: str) -> str:
     daily_table = _build_daily_sleep_table(checkins)
-    llm_insights = await generate_report_section("sleep_analysis", base_context_for_llm)
+    llm_insights = await generate_report_section("sleep_analysis", chained_context)
     return f"""
 {daily_table}
 {llm_insights}"""
@@ -364,7 +381,7 @@ def _build_daily_sleep_table(checkins: list) -> str:
         status = "Adequado" if s.get('sleep_duration_hours', 0) >= 7 else "Limite inferior"
         status_class = "positive" if status == "Adequado" else "warning"
         rows.append(f"""
-<tr>
+t<tr>
             <td>{date}</td>
             <td>{s.get('sleep_duration_hours', 0):.1f}h</td>
             <td>{s.get('sleep_quality_rating', 0)}/5</td>
@@ -382,7 +399,7 @@ def _build_daily_sleep_table(checkins: list) -> str:
         </tbody>
     </table>"""
 
-async def _build_training_analysis_section(checkins: list, base_context_for_llm: str) -> str:
+async def _build_training_analysis_section(checkins: list, chained_context: str) -> str:
     training_checkins = [c for c in checkins if c.get('training', {}).get('training_journal')]
     sessions_performed = len(training_checkins)
     total_sessions_expected = 5
@@ -401,7 +418,7 @@ async def _build_training_analysis_section(checkins: list, base_context_for_llm:
         </div>
     </div>"""
     training_details_html = _build_training_details(training_checkins)
-    llm_insights = await generate_report_section("training_analysis", base_context_for_llm)
+    llm_insights = await generate_report_section("training_analysis", chained_context)
     return f"""
 {metrics_grid}
 <h3>Detalhamento dos Treinos</h3>
