@@ -126,6 +126,7 @@ async def create_report_for_student(student_id: str, db: AsyncIOMotorDatabase) -
     if not student_data:
         raise HTTPException(status_code=404, detail=f"Student with ID {student_id} not found")
     logger.info(f"Student data found: {student_data}")
+    logger.info(f"Gerando relatório para {student_data.get('full_name', 'N/A')}")
 
     user_tz = timezone(timedelta(hours=-3))
     end_date = datetime.now(user_tz)
