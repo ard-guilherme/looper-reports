@@ -1,9 +1,4 @@
-import json
 import logging
-from typing import Dict, Any
-from bson import ObjectId
-from datetime import datetime
-
 from langchain_core.output_parsers import StrOutputParser
 from langchain_core.prompts import PromptTemplate
 from langchain_google_genai import ChatGoogleGenerativeAI
@@ -12,47 +7,54 @@ from app.core.config import settings
 
 logger = logging.getLogger(__name__)
 
-def json_serializer(obj):
-    """Custom JSON serializer for objects not serializable by default json code"""
-    if isinstance(obj, (datetime, ObjectId)):
-        return str(obj)
-    raise TypeError(f"Type {type(obj)} not serializable")
+PROMPT_FILES = {
+    "overview": "sections/overview_prompt.txt",
+    "nutrition_analysis": "sections/nutrition_analysis_prompt.txt",
+}
 
-async def generate_report_content(user_data_for_prompt: str) -> str:
+async def generate_report_section(section_type: str, context_data: str, temperature: float = 0.7) -> str:
     """
-    Generates a fitness report for a student using the Gemini model.
+    Gera o conteúdo para uma seção específica do relatório usando um LLM.
 
     Args:
-        user_data_for_prompt: A pre-formatted string containing all student data for the prompt.
+        section_type: O tipo de seção a ser gerada (ex: 'overview').
+        context_data: Os dados pré-formatados e analisados para o prompt.
+        temperature: A temperatura do modelo para controlar a criatividade.
 
     Returns:
-        The generated report content as an HTML string.
+        O conteúdo de texto gerado para a seção.
     """
-    logger.info("Initializing LLM and prompt template.")
-    # Initialize the language model
-    llm = ChatGoogleGenerativeAI(model="gemini-2.5-pro", google_api_key=settings.GEMINI_API_KEY)
+    if section_type not in PROMPT_FILES:
+        logger.error(f"Tipo de seção inválido: {section_type}")
+        raise ValueError(f"Nenhum arquivo de prompt definido para a seção '{section_type}'")
 
-    # Read prompt template from file
+    prompt_filename = PROMPT_FILES[section_type]
+    prompt_filepath = f"{settings.PROMPTS_DIR}/{prompt_filename}"
+    logger.info(f"Gerando seção '{section_type}' usando o prompt '{prompt_filepath}'")
+
     try:
-        with open(settings.REPORT_PROMPT_FILE, "r", encoding="utf-8") as f:
-            prompt_template_content = f.read()
+        with open(prompt_filepath, "r", encoding="utf-8") as f:
+            template_content = f.read()
     except FileNotFoundError:
-        logger.error(f"Prompt file not found: {settings.REPORT_PROMPT_FILE}")
+        logger.error(f"Arquivo de prompt não encontrado: {prompt_filepath}")
         raise
 
-    # Create the prompt template
-    prompt = PromptTemplate(
-        template=prompt_template_content + "\n\n" + "DADOS DO ALUNO:\n{user_data_for_prompt}",
-        input_variables=["user_data_for_prompt"],
+    llm = ChatGoogleGenerativeAI(
+        model="gemini-1.5-pro",
+        google_api_key=settings.GEMINI_API_KEY,
+        temperature=temperature,
+        max_output_tokens=8192
     )
 
-    # Define the generation chain
+    prompt = PromptTemplate(
+        template=template_content,
+        input_variables=["context_data"],
+    )
+
     chain = prompt | llm | StrOutputParser()
 
-    logger.debug("Invoking LLM chain with formatted inputs.")
+    logger.debug(f"Invocando LLM para a seção '{section_type}'.")
+    section_content = await chain.ainvoke({"context_data": context_data})
+    logger.info(f"Conteúdo para a seção '{section_type}' gerado com sucesso.")
 
-    # Invoke the chain asynchronously
-    report = await chain.ainvoke({"user_data_for_prompt": user_data_for_prompt})
-    logger.info("LLM chain invocation complete.")
-
-    return report
+    return section_content.strip()

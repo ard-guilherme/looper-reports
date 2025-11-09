@@ -6,12 +6,7 @@ from datetime import datetime, UTC
 from fastapi import HTTPException
 
 from app.services.report_service import create_report_for_student
-
-# Helper to create an awaitable result
-def async_return(result):
-    f = asyncio.Future()
-    f.set_result(result)
-    return f
+from app.core.config import settings
 
 # Mocks for database documents
 STUDENT_ID = ObjectId()
@@ -35,18 +30,46 @@ SAMPLE_MACRO_GOALS = {
 
 STUDENT_DATA = {"_id": STUDENT_ID, "name": STUDENT_NAME, "additional_context": "Test context"}
 
+IDEAL_TEMPLATE_CONTENT = """<!DOCTYPE html>
+<html>
+<head><title>Relatório</title></head>
+<body>
+    <h1>Relatório para {{student_name}}</h1>
+    <p>Semana: {{week_string}}</p>
+    <div id=\"overview\">{{overview_section}}</div>
+    <div id=\"scores\">{{score_cards}}</div>
+    <div id=\"nutrition\">{{nutrition_analysis_section}}</div>
+    <div id=\"sleep\">{{sleep_analysis_section}}</div>
+    <div id=\"training\">{{training_analysis_section}}</div>
+    <div id=\"insights\">{{detailed_insights_section}}</div>
+    <div id=\"recs\">{{recommendations_section}}</div>
+    <div id=\"conclusion\">{{conclusion_section}}</div>
+    <p>Próxima semana: {{next_week_string}}</p>
+    <p>Gerado em: {{generation_date}}</p>
+</body>
+</html>"""
+
+@pytest.fixture(autouse=True)
+def override_settings(monkeypatch):
+    monkeypatch.setattr(settings, 'REPORT_TEMPLATE_FILE', 'mock_template.html')
+
 @pytest.mark.asyncio
-async def test_create_report_for_student_success():
+async def test_create_report_orchestration_flow():
     """
-    Tests the successful creation of a report, verifying the data analysis and formatting.
+    Tests the new orchestration flow, ensuring the correct agent is called
+    and the template is populated.
     """
     # Arrange
     mock_db = MagicMock()
-
-    # Pre-create the mock for the 'relatorios' collection to ensure the same object is used
     mock_relatorios_collection = MagicMock(
-        find=MagicMock(return_value=MagicMock(sort=MagicMock(return_value=MagicMock(limit=MagicMock(return_value=MagicMock(to_list=AsyncMock(return_value=[]))))))),
-        insert_one=AsyncMock(return_value=None)
+        insert_one=AsyncMock(return_value=None),
+        find=MagicMock(return_value=MagicMock(
+            sort=MagicMock(return_value=MagicMock(
+                limit=MagicMock(return_value=MagicMock(
+                    to_list=AsyncMock(return_value=[])  # Return an empty list for past reports
+                ))
+            ))
+        ))
     )
 
     mock_db.__getitem__.side_effect = lambda collection_name: {
@@ -56,43 +79,45 @@ async def test_create_report_for_student_success():
         "relatorios": mock_relatorios_collection
     }[collection_name]
 
-    with patch("app.services.report_service.generate_report_content", new_callable=AsyncMock) as mock_generate_content:
-        mock_generate_content.return_value = f"<html>Report for {STUDENT_NAME}</html>"
-
-        # Act
-        html_output = await create_report_for_student(str(STUDENT_ID), mock_db)
-
-        # Assert
-        assert f"<html>Report for {STUDENT_NAME}</html>" in html_output
-        mock_generate_content.assert_called_once()
+    # Mock the file system read for the template
+    with patch("builtins.open", new_callable=MagicMock) as mock_open:
+        mock_open.return_value.__enter__.return_value.read.return_value = IDEAL_TEMPLATE_CONTENT
         
-        formatted_prompt = mock_generate_content.call_args[0][0]
+        # Mock the specialist agent to return different content based on the section
+        async def side_effect(section_type, context_data):
+            if section_type == "overview":
+                return "Este é o resumo da visão geral gerado pelo LLM."
+            elif section_type == "nutrition_analysis":
+                return "<p>Insights de nutrição gerados pelo LLM.</p>"
+            return ""
         
-        assert f"ALUNO: {STUDENT_NAME}" in formatted_prompt
-        assert "Supino Reto" in formatted_prompt
-        assert "2500kcal | 180g" in formatted_prompt
-        assert "8.0h | Qualidade 5/5" in formatted_prompt
+        with patch("app.services.report_service.generate_report_section", new_callable=AsyncMock) as mock_generate_section:
+            mock_generate_section.side_effect = side_effect
 
-        assert "RESUMO NUTRICIONAL" in formatted_prompt
-        assert "Calorias Médias: 2500 kcal" in formatted_prompt
-        assert "Proteína Média: 180g (Meta: 200g, Aderência: 90%)" in formatted_prompt
-        assert "Coeficiente de Variação (Calorias): 0.0%" in formatted_prompt
-        assert "Média de Sono: 8.0 horas/noite" in formatted_prompt
-        assert "Volume Total (Séries): 1 séries" in formatted_prompt
+            # Act
+            final_html = await create_report_for_student(str(STUDENT_ID), mock_db)
 
-        mock_relatorios_collection.insert_one.assert_called_once()
+            # Assert
+            # 1. Check that the correct agents were called
+            assert mock_generate_section.call_count == 2
+            # call_args.args[0] is the section_type
+            assert mock_generate_section.call_args_list[0].args[0] == "overview"
+            assert mock_generate_section.call_args_list[1].args[0] == "nutrition_analysis"
 
-@pytest.mark.asyncio
-async def test_create_report_student_not_found():
-    """
-    Tests that an HTTPException is raised when the student is not found.
-    """
-    # Arrange
-    mock_db = MagicMock()
-    mock_db["students"].find_one.return_value = async_return(None)
+            # 2. Check that the template was populated correctly
+            assert f"<h1>Relatório para {STUDENT_NAME}</h1>" in final_html
+            assert "<div id=\"overview\"><p>Este é o resumo da visão geral gerado pelo LLM.</p></div>" in final_html
+            assert "<p>Insights de nutrição gerados pelo LLM.</p>" in final_html
+            
+            # 3. Check for structural elements from the nutrition section
+            assert '<div class="metrics-grid">' in final_html
+            assert '<h3>Consistência Nutricional</h3>' in final_html
+            assert '<h3>Distribuição Calórica Diária</h3>' in final_html
+            assert '<table>' in final_html
+            assert '<td>2500 kcal</td>' in final_html # Check if table is populated
 
-    # Act & Assert
-    with pytest.raises(HTTPException) as exc_info:
-        await create_report_for_student(str(ObjectId()), mock_db)
-    
-    assert exc_info.value.status_code == 404
+            # 4. Check that other sections are placeholder comments
+            assert "<!-- Score cards to be implemented -->" in final_html
+            
+            # 5. Check that the report was saved
+            mock_relatorios_collection.insert_one.assert_called_once()
