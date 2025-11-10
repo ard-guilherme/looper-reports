@@ -241,7 +241,7 @@ async def _build_nutrition_section(checkins: list, macro_goals: dict, past_repor
     prev_week_metrics = _parse_previous_week_metrics(past_reports)
     metrics_grid_1 = _build_main_metrics_grid(avg_calories, avg_proteins, avg_carbs, avg_fats, protein_goal, prev_week_metrics)
     metrics_grid_2 = _build_consistency_metrics_grid(calorie_cv, days_on_protein_goal, len(calories))
-    daily_table = _build_daily_nutrition_table(checkins)
+    daily_table = _build_daily_nutrition_table(checkins, macro_goals)
     llm_insights = await generate_report_section("nutrition_analysis", chained_context)
     return f"""
 {metrics_grid_1}
@@ -335,19 +335,65 @@ def _build_consistency_metrics_grid(cv, days_on_goal, total_days) -> str:
         </div>
     </div>"""
 
-def _build_daily_nutrition_table(checkins: list) -> str:
+def _build_daily_nutrition_table(checkins: list, macro_goals: dict) -> str:
     rows = []
+    # Get macro goals for comparison
+    calories_goal = macro_goals.get('calories', 0)
+    protein_goal = macro_goals.get('protein', 0)
+    carbs_goal = macro_goals.get('carbs', 0)
+    fat_goal = macro_goals.get('fat', 0)
+
     for checkin in checkins:
         date = datetime.fromisoformat(checkin.get("checkin_date")).strftime("%d/%m (%a)")
         n = checkin.get("nutrition", {})
+        
+        current_calories = n.get('calories', 0)
+        current_protein = n.get('protein', 0)
+        current_carbs = n.get('carbs', 0)
+        current_fat = n.get('fat', 0)
+
+        # Determine status based on goals (example logic, can be refined)
+        status = "Meta"
+        status_class = "positive"
+
+        # Define a tolerance for being "near" the goal, e.g., +/- 10%
+        CAL_TOLERANCE_PERCENT = 0.10
+        PROT_TOLERANCE_PERCENT = 0.10
+        CARBS_TOLERANCE_PERCENT = 0.10
+        FAT_TOLERANCE_PERCENT = 0.10
+
+        # Check calories
+        if calories_goal > 0 and not (calories_goal * (1 - CAL_TOLERANCE_PERCENT) <= current_calories <= calories_goal * (1 + CAL_TOLERANCE_PERCENT)):
+            status = "Atenção"
+            status_class = "warning"
+        
+        # Check protein (more critical for protein)
+        if protein_goal > 0 and not (protein_goal * (1 - PROT_TOLERANCE_PERCENT) <= current_protein <= protein_goal * (1 + PROT_TOLERANCE_PERCENT)):
+            status = "Atenção"
+            status_class = "warning"
+            if current_protein < protein_goal * (1 - PROT_TOLERANCE_PERCENT): # Significantly below protein goal
+                status = "Crítico"
+                status_class = "critical"
+
+        # Check carbs and fat (less critical, can be adjusted)
+        if carbs_goal > 0 and not (carbs_goal * (1 - CARBS_TOLERANCE_PERCENT) <= current_carbs <= carbs_goal * (1 + CARBS_TOLERANCE_PERCENT)):
+            if status_class != "critical": # Don't override critical
+                status = "Atenção"
+                status_class = "warning"
+        
+        if fat_goal > 0 and not (fat_goal * (1 - FAT_TOLERANCE_PERCENT) <= current_fat <= fat_goal * (1 + FAT_TOLERANCE_PERCENT)):
+            if status_class != "critical": # Don't override critical
+                status = "Atenção"
+                status_class = "warning"
+
         rows.append(f"""
-t<tr>
+<tr>
             <td>{date}</td>
-            <td>{n.get('calories', 0)} kcal</td>
-            <td>{n.get('protein', 0)}g</td>
-            <td>{n.get('carbs', 0)}g</td>
-            <td>{n.get('fat', 0)}g</td>
-            <td><span class="positive">Meta</span></td>
+            <td>{current_calories} kcal</td>
+            <td>{current_protein}g</td>
+            <td>{current_carbs}g</td>
+            <td>{current_fat}g</td>
+            <td><span class=\"{status_class}\">{status}</span></td>
         </tr>""")
     table_rows = "\n".join(rows)
     return f"""
