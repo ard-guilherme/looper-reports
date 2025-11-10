@@ -459,7 +459,7 @@ t<tr>
     </table>"""
 
 async def _build_training_analysis_section(checkins: list, chained_context: str) -> str:
-    training_checkins = [c for c in checkins if c.get('training', {}).get('training_journal')]
+    training_checkins = [c for c in checkins if c.get('training', {}).get('training_journal', '').strip().lower() not in ('', 'não treinei hoje')]
     sessions_performed = len(training_checkins)
     total_sessions_expected = 5
     total_sets = _calculate_total_sets(checkins)
@@ -550,7 +550,7 @@ def _build_score_cards_section(checkins: list, macro_goals: dict) -> str:
     sleep_quality = [s.get('sleep_quality_rating', 0) for s in daily_sleep if s.get('sleep_quality_rating', 0) > 0]
     avg_sleep_quality = np.mean(sleep_quality) if sleep_quality else 0
     days_less_than_6h = sum(1 for s in sleep_hours if s < 6)
-    training_checkins = [c for c in checkins if c.get('training', {}).get('training_journal')]
+    training_checkins = [c for c in checkins if c.get('training', {}).get('training_journal', '').strip().lower() not in ('', 'não treinei hoje')]
     sessions_performed = len(training_checkins)
     total_sessions_expected = 5
     training_adherence = (sessions_performed / total_sessions_expected) * 100 if total_sessions_expected > 0 else 0
