@@ -36,7 +36,7 @@ def _load_prompt_template(section_type: str) -> str:
         raise
 
 def _sanitize_html_output(raw_output: str) -> str:
-    """Limpa a saída do LLM, removendo texto conversacional e blocos de código markdown."""
+    """Limpa a saída do LLM, removendo texto conversacional, blocos de código markdown e padrões repetitivos."""
     sanitized_output = re.sub(r'^```html\n', '', raw_output, flags=re.MULTILINE)
     sanitized_output = re.sub(r'\n```$', '', sanitized_output, flags=re.MULTILINE)
 
@@ -49,6 +49,9 @@ def _sanitize_html_output(raw_output: str) -> str:
     ]
     for intro in common_intros:
         sanitized_output = re.sub(intro, '', sanitized_output, flags=re.IGNORECASE | re.DOTALL)
+
+    # Remove repeated single characters (like 't t t t t t t') at the beginning of the output
+    sanitized_output = re.sub(r'^(?:(\S)\s)\1(?:\s\1){2,}\s*\n*', '', sanitized_output, flags=re.MULTILINE)
 
     return sanitized_output.strip()
 
@@ -69,7 +72,7 @@ async def generate_report_section(section_type: str, context_data: str) -> str:
         
         # Configura o modelo Gemini
         llm = ChatGoogleGenerativeAI(
-            model="gemini-pro",
+            model="gemini-2.5-pro",
             google_api_key=settings.GEMINI_API_KEY,
             temperature=0.7,
             convert_system_message_to_human=True # Necessário para Gemini
