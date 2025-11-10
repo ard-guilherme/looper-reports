@@ -73,7 +73,7 @@ async def generate_report_section(section_type: str, context_data: str, student_
         
         # Configura o modelo Gemini
         llm = ChatGoogleGenerativeAI(
-            model="gemini-1.5-pro",
+            model="gemini-2.5-pro",
             google_api_key=settings.GEMINI_API_KEY,
             temperature=0.7,
             convert_system_message_to_human=True # Necessário para Gemini
