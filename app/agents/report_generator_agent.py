@@ -84,6 +84,9 @@ async def generate_report_section(section_type: str, context_data: str) -> str:
         # Define a cadeia de execução (prompt -> modelo -> parser de saída)
         chain = prompt | llm | StrOutputParser()
 
+        # Log do contexto completo para depuração
+        logger.debug(f"Contexto completo para a seção '{section_type}':\n{context_data}")
+
         # Invoca a cadeia com os dados de contexto
         raw_content = await chain.ainvoke({"context_data": context_data})
 
