@@ -36,8 +36,15 @@ def _get_base_context(checkins: list, student: dict, past_reports: list, macro_g
     avg_calories = np.mean(calories) if calories else 0
     avg_proteins = np.mean(proteins) if proteins else 0
     calorie_cv = (np.std(calories) / avg_calories) * 100 if avg_calories > 0 else 0
+
+    # Extract all macro goals
+    calories_goal = macro_goals.get('calories', 0)
     protein_goal = macro_goals.get('protein', 0)
+    carbs_goal = macro_goals.get('carbs', 0)
+    fat_goal = macro_goals.get('fat', 0)
+
     protein_adherence = (avg_proteins / protein_goal) * 100 if protein_goal > 0 else 0
+
     daily_sleep = [c.get('sleep', {}) for c in checkins]
     sleep_hours = [s.get('sleep_duration_hours', 0) for s in daily_sleep if s.get('sleep_duration_hours', 0) > 0]
     avg_sleep_hours = np.mean(sleep_hours) if sleep_hours else 0
@@ -66,10 +73,16 @@ NUTRIÇÃO DIÁRIA:
 SONO DIÁRIO:
 {_format_sleep_data(checkins)}
 
+## METAS NUTRICIONAIS
+- Calorias: {calories_goal} kcal
+- Proteína: {protein_goal}g
+- Carboidratos: {carbs_goal}g
+- Gorduras: {fat_goal}g
+
 ## DADOS ANALÍTICOS
 ### RESUMO NUTRICIONAL
 - Calorias Médias: {avg_calories:.0f} kcal
-- Proteína Média: {avg_proteins:.0f}g (Meta: {protein_goal}g, Aderência: {protein_adherence:.0f}%)
+- Proteína Média: {avg_proteins:.0f}g (Aderência: {protein_adherence:.0f}%)
 - Coeficiente de Variação (Calorias): {calorie_cv:.1f}%
 
 ### RESUMO SONO
