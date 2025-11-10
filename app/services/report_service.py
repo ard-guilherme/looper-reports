@@ -28,6 +28,33 @@ MONTHS_PT = {
     'December': 'Dezembro'
 }
 
+def _infer_training_sessions_per_week(historical_checkins: list) -> int:
+    """
+    Infers the number of expected training sessions per week by finding the
+    maximum number of workouts performed in any single week over the given history.
+    """
+    if not historical_checkins:
+        logger.warning("No historical check-ins found to infer training sessions. Defaulting to 5.")
+        return 5
+
+    trainings_per_week = {}
+    for checkin in historical_checkins:
+        journal = checkin.get('training', {}).get('training_journal', '').strip().lower()
+        if journal and journal not in ('', 'não treinei hoje'):
+            checkin_date = datetime.fromisoformat(checkin.get("checkin_date"))
+            year, week, _ = checkin_date.isocalendar()
+            week_key = f"{year}-{week}"
+            
+            trainings_per_week[week_key] = trainings_per_week.get(week_key, 0) + 1
+
+    if not trainings_per_week:
+        logger.warning("No valid training sessions found in history to infer split. Defaulting to 5.")
+        return 5
+
+    max_sessions = max(trainings_per_week.values())
+    logger.info(f"Inferred training split: {max_sessions} sessions per week based on historical maximum.")
+    return max_sessions
+
 def _get_base_context(checkins: list, student: dict, past_reports: list, macro_goals: dict) -> str:
     """Analyzes all weekly data and formats it into a single string for the LLM prompt context."""
     daily_nutrition = [c.get('nutrition', {}) for c in checkins]
@@ -161,10 +188,13 @@ async def create_report_for_student(student_id: str, db: AsyncIOMotorDatabase) -
     logger.info(f"Student data found: {student_data}")
     logger.info(f"Gerando relatório para {student_name}")
 
+    # Define date ranges
     user_tz = timezone(timedelta(hours=-3))
     end_date = datetime.now(user_tz)
     start_date = end_date - timedelta(days=7)
+    history_start_date = end_date - timedelta(weeks=6)
 
+    # Fetch data for the current week
     checkins_data = await db["checkins"].find({
         "student_id": student_obj_id, 
         "checkin_date": {
@@ -172,11 +202,23 @@ async def create_report_for_student(student_id: str, db: AsyncIOMotorDatabase) -
             "$lte": end_date.strftime("%Y-%m-%d")
         }
     }).to_list(length=None)
+
+    # Fetch data for the last 6 weeks to infer training split
+    historical_checkins = await db["checkins"].find({
+        "student_id": student_obj_id,
+        "checkin_date": {
+            "$gte": history_start_date.strftime("%Y-%m-%d"),
+            "$lte": end_date.strftime("%Y-%m-%d")
+        }
+    }).to_list(length=None)
+
+    total_sessions_expected = _infer_training_sessions_per_week(historical_checkins)
+
     macro_goals_data = await db["macro_goals"].find_one({"student_id": student_obj_id}) or {}
     past_reports_data = await db["relatorios"].find({"student_id": student_obj_id}).sort("generated_at", -1).limit(1).to_list(length=1)
-    logger.info(f"Data fetched for student_id: {student_id}. Found {len(checkins_data)} check-ins.")
+    logger.info(f"Data fetched for student_id: {student_id}. Found {len(checkins_data)} check-ins for the week.")
 
-    # --- Início do Contexto Encadeado ---
+    # --- Chained Context Start ---
     chained_context = _get_base_context(checkins_data, student_data, past_reports_data, macro_goals_data)
 
     overview_content = await generate_report_section("overview", chained_context, student_name)
@@ -188,10 +230,10 @@ async def create_report_for_student(student_id: str, db: AsyncIOMotorDatabase) -
     sleep_html_content = await _build_sleep_analysis_section(checkins_data, chained_context, student_name)
     chained_context += f"\n\n# SEÇÃO GERADA: Análise de Sono e Recuperação\n{sleep_html_content}"
 
-    training_html_content = await _build_training_analysis_section(checkins_data, chained_context, student_name)
+    training_html_content = await _build_training_analysis_section(checkins_data, chained_context, student_name, total_sessions_expected)
     chained_context += f"\n\n# SEÇÃO GERADA: Desempenho nos Treinos\n{training_html_content}"
 
-    score_cards_html_content = _build_score_cards_section(checkins_data, macro_goals_data)
+    score_cards_html_content = _build_score_cards_section(checkins_data, macro_goals_data, total_sessions_expected)
 
     detailed_insights_html_content = await generate_report_section("detailed_insights", chained_context, student_name)
     chained_context += f"\n\n# SEÇÃO GERADA: Insights Detalhados\n{detailed_insights_html_content}"
@@ -200,7 +242,7 @@ async def create_report_for_student(student_id: str, db: AsyncIOMotorDatabase) -
     chained_context += f"\n\n# SEÇÃO GERADA: Recomendações e Ajustes\n{recommendations_html_content}"
 
     conclusion_html_content = await generate_report_section("conclusion", chained_context, student_name)
-    # --- Fim do Contexto Encadeado ---
+    # --- Chained Context End ---
 
     with open(settings.REPORT_TEMPLATE_FILE, "r", encoding="utf-8") as f:
         report_html = f.read()
@@ -460,17 +502,18 @@ t<tr>
         </tbody>
     </table>"""
 
-async def _build_training_analysis_section(checkins: list, chained_context: str, student_name: str) -> str:
+async def _build_training_analysis_section(checkins: list, chained_context: str, student_name: str, total_sessions_expected: int) -> str:
     training_checkins = [c for c in checkins if c.get('training', {}).get('training_journal', '').strip().lower() not in ('', 'não treinei hoje')]
     sessions_performed = len(training_checkins)
-    total_sessions_expected = 5
     total_sets = _calculate_total_sets(checkins)
+    adherence_percentage = (sessions_performed / total_sessions_expected * 100) if total_sessions_expected > 0 else 0
+
     metrics_grid = f"""
 <div class="metrics-grid">
         <div class="metric-item">
             <div class="metric-label">Sessões Realizadas</div>
             <div class="metric-value">{sessions_performed}/{total_sessions_expected}</div>
-            <div class="metric-comparison">Aderência: <span class="positive">{sessions_performed/total_sessions_expected*100:.0f}%</span></div>
+            <div class="metric-comparison">Aderência: <span class="positive">{adherence_percentage:.0f}%</span></div>
         </div>
         <div class="metric-item">
             <div class="metric-label">Volume Semanal</div>
@@ -545,7 +588,7 @@ def _build_training_details(checkins: list) -> str:
 
     return "\n".join(details)
 
-def _build_score_cards_section(checkins: list, macro_goals: dict) -> str:
+def _build_score_cards_section(checkins: list, macro_goals: dict, total_sessions_expected: int) -> str:
     daily_sleep = [c.get('sleep', {}) for c in checkins]
     sleep_hours = [s.get('sleep_duration_hours', 0) for s in daily_sleep if s.get('sleep_duration_hours', 0) > 0]
     avg_sleep_hours = np.mean(sleep_hours) if sleep_hours else 0
@@ -554,7 +597,6 @@ def _build_score_cards_section(checkins: list, macro_goals: dict) -> str:
     days_less_than_6h = sum(1 for s in sleep_hours if s < 6)
     training_checkins = [c for c in checkins if c.get('training', {}).get('training_journal', '').strip().lower() not in ('', 'não treinei hoje')]
     sessions_performed = len(training_checkins)
-    total_sessions_expected = 5
     training_adherence = (sessions_performed / total_sessions_expected) * 100 if total_sessions_expected > 0 else 0
     daily_nutrition = [c.get('nutrition', {}) for c in checkins]
     proteins = [n.get('protein', 0) for n in daily_nutrition if n.get('protein', 0) > 0]
