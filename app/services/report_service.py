@@ -600,36 +600,65 @@ def _build_training_details(checkins: list) -> str:
     return "\n".join(details)
 
 def _build_score_cards_section(checkins: list, macro_goals: dict, total_sessions_expected: int) -> str:
+    # --- Sleep Score ---
     daily_sleep = [c.get('sleep', {}) for c in checkins]
     sleep_hours = [s.get('sleep_duration_hours', 0) for s in daily_sleep if s.get('sleep_duration_hours', 0) > 0]
     avg_sleep_hours = np.mean(sleep_hours) if sleep_hours else 0
     sleep_quality = [s.get('sleep_quality_rating', 0) for s in daily_sleep if s.get('sleep_quality_rating', 0) > 0]
     avg_sleep_quality = np.mean(sleep_quality) if sleep_quality else 0
     days_less_than_6h = sum(1 for s in sleep_hours if s < 6)
+
+    rec_score = 0
+    rec_status_class = "critical"
+    if not sleep_hours:
+        rec_score = 0
+    elif avg_sleep_hours >= 7 and avg_sleep_quality >= 4 and days_less_than_6h == 0:
+        rec_score = 9
+        rec_status_class = "positive"
+    elif avg_sleep_hours >= 6.5 and avg_sleep_quality >= 3.5 and days_less_than_6h <= 1:
+        rec_score = 7
+        rec_status_class = "warning"
+    else:
+        rec_score = 5
+
+    # --- Performance Score ---
     training_checkins = [c for c in checkins if c.get('training', {}).get('training_journal', '').strip().lower() not in ('', 'não treinei hoje')]
     sessions_performed = len(training_checkins)
     training_adherence = (sessions_performed / total_sessions_expected) * 100 if total_sessions_expected > 0 else 0
+
+    perf_score = 0
+    perf_status_class = "critical"
+    if not training_checkins and sessions_performed == 0:
+        perf_score = 0
+    elif training_adherence >= 100:
+        perf_score = 10
+        perf_status_class = "positive"
+    elif training_adherence >= 80:
+        perf_score = 8
+        perf_status_class = "warning"
+    else:
+        perf_score = 6
+
+    # --- Nutrition Score ---
     daily_nutrition = [c.get('nutrition', {}) for c in checkins]
     proteins = [n.get('protein', 0) for n in daily_nutrition if n.get('protein', 0) > 0]
     protein_goal = macro_goals.get('protein', 1)
     avg_proteins = np.mean(proteins) if proteins else 0
     protein_adherence_days = sum(1 for p in proteins if abs(p - protein_goal) <= 10)
     total_nutrition_days = len(proteins)
-    rec_score = 0
-    rec_status_class = "critical"
-    if avg_sleep_hours >= 7 and avg_sleep_quality >= 4 and days_less_than_6h == 0: rec_score = 9; rec_status_class = "positive"
-    elif avg_sleep_hours >= 6.5 and avg_sleep_quality >= 3.5 and days_less_than_6h <= 1: rec_score = 7; rec_status_class = "warning"
-    else: rec_score = 5; rec_status_class = "critical"
-    perf_score = 0
-    perf_status_class = "critical"
-    if training_adherence >= 100: perf_score = 10; perf_status_class = "positive"
-    elif training_adherence >= 80: perf_score = 8; perf_status_class = "warning"
-    else: perf_score = 6; perf_status_class = "critical"
+
     nutri_score = 0
     nutri_status_class = "critical"
-    if protein_adherence_days == total_nutrition_days and avg_proteins >= protein_goal * 0.95: nutri_score = 10; nutri_status_class = "positive"
-    elif protein_adherence_days >= total_nutrition_days * 0.8: nutri_score = 8; nutri_status_class = "warning"
-    else: nutri_score = 6; nutri_status_class = "critical"
+    if not proteins:
+        nutri_score = 0
+    elif protein_adherence_days >= total_nutrition_days * 0.8 and total_nutrition_days > 0:
+        nutri_score = 8
+        nutri_status_class = "warning"
+        if protein_adherence_days == total_nutrition_days and avg_proteins >= protein_goal * 0.95:
+            nutri_score = 10
+            nutri_status_class = "positive"
+    else:
+        nutri_score = 6
     rec_card = f"""
 <div class="score-card {rec_status_class}">
         <div class="score-label">Recuperação</div>
