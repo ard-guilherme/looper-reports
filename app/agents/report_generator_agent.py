@@ -55,24 +55,25 @@ def _sanitize_html_output(raw_output: str) -> str:
 
     return sanitized_output.strip()
 
-async def generate_report_section(section_type: str, context_data: str) -> str:
+async def generate_report_section(section_type: str, context_data: str, student_name: str) -> str:
     """
     Gera uma seção específica do relatório usando o LLM (Google Gemini via LangChain).
 
     Args:
         section_type: O tipo de seção a ser gerada (ex: 'overview').
         context_data: A string de contexto com todos os dados do aluno.
+        student_name: O nome do aluno para garantir que não haja vazamento de dados.
 
     Returns:
         O conteúdo HTML gerado e sanitizado para a seção.
     """
-    logger.info(f"Gerando seção do relatório com LangChain e Gemini: {section_type}")
+    logger.info(f"Gerando seção do relatório com LangChain e Gemini: {section_type} para o aluno {student_name}")
     try:
         prompt_template_str = _load_prompt_template(section_type)
         
         # Configura o modelo Gemini
         llm = ChatGoogleGenerativeAI(
-            model="gemini-2.5-pro",
+            model="gemini-1.5-pro",
             google_api_key=settings.GEMINI_API_KEY,
             temperature=0.7,
             convert_system_message_to_human=True # Necessário para Gemini
@@ -88,12 +89,12 @@ async def generate_report_section(section_type: str, context_data: str) -> str:
         logger.debug(f"Contexto completo para a seção '{section_type}':\n{context_data}")
 
         # Invoca a cadeia com os dados de contexto
-        raw_content = await chain.ainvoke({"context_data": context_data})
+        raw_content = await chain.ainvoke({"context_data": context_data, "student_name": student_name})
 
         # Sanitiza a saída para garantir que é apenas HTML
         sanitized_content = _sanitize_html_output(raw_content)
         
-        logger.info(f"Seção '{section_type}' gerada com sucesso.")
+        logger.info(f"Seção '{section_type}' gerada com sucesso para {student_name}.")
         return sanitized_content
 
     except Exception as e:
