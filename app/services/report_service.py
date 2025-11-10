@@ -1,6 +1,7 @@
 import logging
 import re
 import locale
+import base64
 from bson import ObjectId
 from datetime import datetime, timedelta, timezone
 from fastapi import HTTPException
@@ -244,12 +245,22 @@ async def create_report_for_student(student_id: str, db: AsyncIOMotorDatabase) -
     conclusion_html_content = await generate_report_section("conclusion", chained_context, student_name)
     # --- Chained Context End ---
 
+    # Read logo and encode it in Base64
+    logo_data_uri = ""
+    try:
+        with open("app/static/img/logo.png", "rb") as image_file:
+            encoded_string = base64.b64encode(image_file.read()).decode('utf-8')
+            logo_data_uri = f"data:image/png;base64,{encoded_string}"
+    except FileNotFoundError:
+        logger.warning("Logo file not found at app/static/img/logo.png. Report will be generated without a logo.")
+
     with open(settings.REPORT_TEMPLATE_FILE, "r", encoding="utf-8") as f:
         report_html = f.read()
 
     month_name_en = end_date.strftime("%B")
     month_name_pt = MONTHS_PT.get(month_name_en, month_name_en)
 
+    report_html = report_html.replace("{{logo_data_uri}}", logo_data_uri)
     report_html = report_html.replace("{{student_name}}", student_name)
     report_html = report_html.replace("{{week_string}}", f"Semana {end_date.isocalendar()[1]} ({start_date.strftime('%d/%m')} - {end_date.strftime('%d/%m')})")
     report_html = report_html.replace("{{overview_section}}", f"<p>{overview_content}</p>")

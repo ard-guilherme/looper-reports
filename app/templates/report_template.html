@@ -42,6 +42,12 @@
             border-bottom: 3px solid #76ff01;
         }
 
+        .header-logo {
+            max-width: 150px;
+            margin: 0 auto 1em;
+            display: block;
+        }
+
         .header h1 {
             font-size: 2em;
             color: #76ff01;
@@ -313,6 +319,7 @@
     <div class="container">
         <!-- Cabeçalho -->
         <div class="header">
+            <img src="{{logo_data_uri}}" alt="GN Coach Logo" class="header-logo">
             <h1>Relatório Semanal de Progresso</h1>
             <p class="subtitle">Aluno: <strong>{{student_name}}</strong> | {{week_string}}</p>
         </div>
