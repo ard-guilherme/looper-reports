@@ -332,8 +332,6 @@ async def generate_bulk_reports(db: AsyncIOMotorDatabase):
     except Exception as e:
         logger.critical(f"A critical error occurred during the bulk generation process: {e}")
 
-    return report_html
-
 async def _build_nutrition_section(checkins: list, macro_goals: dict, past_reports: list, chained_context: str, student_name: str) -> str:
     daily_nutrition = [c.get('nutrition', {}) for c in checkins]
     calories = [n.get('calories', 0) for n in daily_nutrition if n.get('calories', 0) > 0]
