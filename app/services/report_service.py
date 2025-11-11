@@ -2,6 +2,7 @@ import logging
 import re
 import locale
 import base64
+import os
 from bson import ObjectId
 from datetime import datetime, timedelta, timezone
 from fastapi import HTTPException
@@ -274,9 +275,61 @@ async def create_report_for_student(student_id: str, db: AsyncIOMotorDatabase) -
     report_html = report_html.replace("{{next_week_string}}", f"Semana {end_date.isocalendar()[1] + 1}")
     report_html = report_html.replace("{{generation_date}}", f"{end_date.day} de {month_name_pt} de {end_date.year}")
 
+    # --- Save report to local file ---
+    try:
+        today_str = end_date.strftime("%Y-%m-%d")
+        save_dir = os.path.join("relatorios_gerados", today_str)
+        os.makedirs(save_dir, exist_ok=True)
+
+        week_number = end_date.isocalendar()[1]
+        year = end_date.year
+        filename = f"Relatorio_Semanal_{student_name.replace(' ', '_')}_Semana{week_number}_{year}.html"
+        save_path = os.path.join(save_dir, filename)
+
+        with open(save_path, "w", encoding="utf-8") as f:
+            f.write(report_html)
+        logger.info(f"Report successfully saved to local file: {save_path}")
+
+    except Exception as e:
+        logger.error(f"Failed to save report to local file for student {student_id}: {e}")
+
+    # --- Save report to database ---
     new_report = {"student_id": student_obj_id, "generated_at": datetime.now(timezone.utc), "html_content": report_html}
     await db["relatorios"].insert_one(new_report)
     logger.info(f"Successfully saved new orchestrated report for student_id: {student_id}")
+
+async def generate_bulk_reports(db: AsyncIOMotorDatabase):
+    """Fetches all active students and generates their reports in parallel."""
+    logger.info("--- Starting Bulk Report Generation --- ")
+    
+    try:
+        active_students = await db["students"].find({"status": "active"}).to_list(length=None)
+        if not active_students:
+            logger.warning("No active students found. Aborting bulk generation.")
+            return
+
+        logger.info(f"Found {len(active_students)} active students. Starting parallel generation...")
+
+        tasks = [create_report_for_student(str(student["_id"]), db) for student in active_students]
+        results = await asyncio.gather(*tasks, return_exceptions=True)
+
+        success_count = 0
+        failure_count = 0
+
+        for i, result in enumerate(results):
+            student_name = active_students[i].get('full_name', 'Unknown')
+            if isinstance(result, Exception):
+                failure_count += 1
+                logger.error(f"Failed to generate report for {student_name}: {result}")
+            else:
+                success_count += 1
+                logger.info(f"Successfully generated report for {student_name}")
+
+        logger.info(f"--- Bulk Report Generation Finished ---")
+        logger.info(f"Summary: {success_count} successful, {failure_count} failed.")
+
+    except Exception as e:
+        logger.critical(f"A critical error occurred during the bulk generation process: {e}")
 
     return report_html
 
