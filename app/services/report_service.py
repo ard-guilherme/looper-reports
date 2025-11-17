@@ -177,7 +177,7 @@ def _parse_previous_week_data(past_reports: list) -> str:
                     data["Calorias médias"] = value
                 elif 'proteína média' in label:
                     data["Proteína média"] = value
-                elif 'volume semanal' in label:  # Corrigido para 'volume semanal'
+                elif 'volume semanal' in label:
                     data["Volume total"] = value
         return f"Calorias médias: {data['Calorias médias']}\nProteína média: {data['Proteína média']}\nVolume treino: {data['Volume total']}"
     except Exception as e:
@@ -516,7 +516,7 @@ def _build_daily_nutrition_table(checkins: list, macro_goals: dict) -> str:
             status_class = "warning"
 
         rows.append(f"""
-tr>
+<tr>
             <td>{date}</td>
             <td>{current_calories} kcal</td>
             <td>{current_protein}g</td>
