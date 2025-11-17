@@ -452,7 +452,6 @@ def _build_consistency_metrics_grid(cv, days_on_goal, total_days) -> str:
 
 def _build_daily_nutrition_table(checkins: list, macro_goals: dict) -> str:
     rows = []
-    # Get macro goals for comparison
     calories_goal = macro_goals.get('calories', 0)
     protein_goal = macro_goals.get('protein', 0)
     carbs_goal = macro_goals.get('carbs', 0)
@@ -467,39 +466,45 @@ def _build_daily_nutrition_table(checkins: list, macro_goals: dict) -> str:
         current_carbs = n.get('carbs', 0)
         current_fat = n.get('fat', 0)
 
-        # Determine status based on goals (example logic, can be refined)
+        # Default status
         status = "Meta"
         status_class = "positive"
 
-        # Define a tolerance for being "near" the goal, e.g., +/- 10%
-        CAL_TOLERANCE_PERCENT = 0.10
-        PROT_TOLERANCE_PERCENT = 0.10
-        CARBS_TOLERANCE_PERCENT = 0.10
-        FAT_TOLERANCE_PERCENT = 0.10
+        # Define tolerances
+        TOLERANCE_NORMAL = 0.10  # +/- 10% is OK
+        TOLERANCE_WARNING = 0.20 # +/- 20% is a warning
 
-        # Check calories
-        if calories_goal > 0 and not (calories_goal * (1 - CAL_TOLERANCE_PERCENT) <= current_calories <= calories_goal * (1 + CAL_TOLERANCE_PERCENT)):
+        # Check each macro
+        macros = [
+            (current_calories, calories_goal, 'calorias'),
+            (current_protein, protein_goal, 'proteína'),
+            (current_carbs, carbs_goal, 'carboidratos'),
+            (current_fat, fat_goal, 'gordura')
+        ]
+
+        highest_alert_level = 0 # 0: Meta, 1: Atenção, 2: Crítico
+
+        for current, goal, name in macros:
+            if goal > 0:
+                deviation = abs(current - goal) / goal
+
+                # Protein has a stricter rule for being too low
+                if name == 'proteína' and current < goal * (1 - TOLERANCE_NORMAL):
+                    if deviation > TOLERANCE_WARNING: # More than 20% below
+                        highest_alert_level = max(highest_alert_level, 2)
+                    else:
+                        highest_alert_level = max(highest_alert_level, 1)
+                elif deviation > TOLERANCE_WARNING:
+                    highest_alert_level = max(highest_alert_level, 2)
+                elif deviation > TOLERANCE_NORMAL:
+                    highest_alert_level = max(highest_alert_level, 1)
+
+        if highest_alert_level == 2:
+            status = "Crítico"
+            status_class = "critical"
+        elif highest_alert_level == 1:
             status = "Atenção"
             status_class = "warning"
-        
-        # Check protein (more critical for protein)
-        if protein_goal > 0 and not (protein_goal * (1 - PROT_TOLERANCE_PERCENT) <= current_protein <= protein_goal * (1 + PROT_TOLERANCE_PERCENT)):
-            status = "Atenção"
-            status_class = "warning"
-            if current_protein < protein_goal * (1 - PROT_TOLERANCE_PERCENT): # Significantly below protein goal
-                status = "Crítico"
-                status_class = "critical"
-
-        # Check carbs and fat (less critical, can be adjusted)
-        if carbs_goal > 0 and not (carbs_goal * (1 - CARBS_TOLERANCE_PERCENT) <= current_carbs <= carbs_goal * (1 + CARBS_TOLERANCE_PERCENT)):
-            if status_class != "critical": # Don't override critical
-                status = "Atenção"
-                status_class = "warning"
-        
-        if fat_goal > 0 and not (fat_goal * (1 - FAT_TOLERANCE_PERCENT) <= current_fat <= fat_goal * (1 + FAT_TOLERANCE_PERCENT)):
-            if status_class != "critical": # Don't override critical
-                status = "Atenção"
-                status_class = "warning"
 
         rows.append(f"""
 <tr>
