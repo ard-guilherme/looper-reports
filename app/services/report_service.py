@@ -304,6 +304,8 @@ async def create_report_for_student(student_id: str, db: AsyncIOMotorDatabase) -
     new_report = {"student_id": student_obj_id, "generated_at": datetime.now(timezone.utc), "html_content": report_html}
     await db["relatorios"].insert_one(new_report)
     logger.info(f"Successfully saved new orchestrated report for student_id: {student_id}")
+    logger.debug(f"Returning report_html (type: {type(report_html)}, length: {len(report_html) if report_html is not None else 'None'})")
+    return report_html
 
 async def generate_bulk_reports(db: AsyncIOMotorDatabase):
     """Fetches all active students and generates their reports in parallel."""

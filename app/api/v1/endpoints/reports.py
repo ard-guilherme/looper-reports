@@ -24,7 +24,7 @@ async def generate_bulk_reports_endpoint(
 async def generate_report(
     student_id: str, 
     db: AsyncIOMotorDatabase = Depends(get_database)
-) -> str:
+) -> HTMLResponse:
     """
     Generates a fitness report for a given student ID.
     """
@@ -32,7 +32,7 @@ async def generate_report(
     try:
         html_content = await report_service.create_report_for_student(student_id=student_id, db=db)
         logger.info(f"Successfully generated report for student_id: {student_id}")
-        return html_content
+        return HTMLResponse(content=html_content)
     except HTTPException as e:
         logger.error(f"HTTPException for student_id {student_id}: {e.status_code} - {e.detail}")
         raise
