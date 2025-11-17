@@ -170,10 +170,15 @@ def _parse_previous_week_data(past_reports: list) -> str:
         data = {"Calorias médias": "N/A", "Proteína média": "N/A", "Volume total": "N/A"}
         for metric in metrics:
             label = metric.find('div', class_='metric-label').text.strip().lower()
-            value = metric.find('div', class_='metric-value').text.strip()
-            if 'calorias médias' in label: data["Calorias médias"] = value
-            elif 'proteína média' in label: data["Proteína média"] = value
-            elif 'volume total' in label: data["Volume total"] = value
+            value_element = metric.find('div', class_='metric-value')
+            if value_element:
+                value = value_element.text.strip()
+                if 'calorias médias' in label:
+                    data["Calorias médias"] = value
+                elif 'proteína média' in label:
+                    data["Proteína média"] = value
+                elif 'volume semanal' in label:  # Corrigido para 'volume semanal'
+                    data["Volume total"] = value
         return f"Calorias médias: {data['Calorias médias']}\nProteína média: {data['Proteína média']}\nVolume treino: {data['Volume total']}"
     except Exception as e:
         logger.error(f"Error parsing previous report HTML: {e}")
@@ -290,7 +295,7 @@ async def create_report_for_student(student_id: str, db: AsyncIOMotorDatabase) -
 
         week_number = end_date.isocalendar()[1]
         year = end_date.year
-        filename = f"Relatorio_Semanal_{student_name.replace(' ', '_')}_Semana{week_number}_{year}.html"
+        filename = f"Relatorio_Semanal_{{student_name.replace(' ', '_')}}_Semana{week_number}_{year}.html"
         save_path = os.path.join(save_dir, filename)
 
         with open(save_path, "w", encoding="utf-8") as f:
@@ -309,7 +314,7 @@ async def create_report_for_student(student_id: str, db: AsyncIOMotorDatabase) -
 
 async def generate_bulk_reports(db: AsyncIOMotorDatabase):
     """Fetches all active students and generates their reports in parallel."""
-    logger.info("--- Starting Bulk Report Generation --- ")
+    logger.info("--- Starting Bulk Report Generation ---")
     
     try:
         active_students = await db["students"].find({"status": "active"}).to_list(length=None)
@@ -368,6 +373,10 @@ async def _build_nutrition_section(checkins: list, macro_goals: dict, past_repor
 def _build_main_metrics_grid(avg_cals, avg_prot, avg_carbs, avg_fats, prot_goal, prev_metrics) -> str:
 
     def get_comparison_html(current, previous, unit='kcal', invert_color=False):
+        try:
+            previous = float(previous)
+        except (ValueError, TypeError):
+            return ""
 
         if previous == 0: return ""
 
@@ -432,7 +441,7 @@ def _build_main_metrics_grid(avg_cals, avg_prot, avg_carbs, avg_fats, prot_goal,
 
         </div>
 
-    </div>"""
+    </div>""
 
 def _build_consistency_metrics_grid(cv, days_on_goal, total_days) -> str:
     return f"""
@@ -448,7 +457,7 @@ def _build_consistency_metrics_grid(cv, days_on_goal, total_days) -> str:
             <div class="metric-value">{days_on_goal}/{total_days}</div>
             <div class="metric-comparison"><span class="positive">{days_on_goal/total_days*100 if total_days > 0 else 0:.0f}% de aderência</span></div>
         </div>
-    </div>"""
+    </div>""
 
 def _build_daily_nutrition_table(checkins: list, macro_goals: dict) -> str:
     rows = []
@@ -524,7 +533,7 @@ def _build_daily_nutrition_table(checkins: list, macro_goals: dict) -> str:
         <tbody>
             {table_rows}
         </tbody>
-    </table>"""
+    </table>""
 
 def _parse_previous_week_metrics(past_reports: list) -> dict:
     if not past_reports: return {}
@@ -576,7 +585,7 @@ t<tr>
         <tbody>
             {table_rows}
         </tbody>
-    </table>"""
+    </table>""
 
 async def _build_training_analysis_section(checkins: list, chained_context: str, student_name: str, total_sessions_expected: int) -> str:
     training_checkins = [c for c in checkins if c.get('training', {}).get('training_journal', '').strip().lower() not in ('', 'não treinei hoje')]
@@ -642,17 +651,17 @@ def _build_training_details(checkins: list) -> str:
             # Se a linha não começa com "Série", é um novo exercício
             if not line.lower().startswith('série'):
                 if current_exercise:
-                    exercises_html += f"<strong>{current_exercise}</strong><br>"
+                    exercises_html += f"<strong>{{current_exercise}}</strong><br>"
                 current_exercise = line
             else:
                 # É uma linha de série, anexa ao exercício atual
                 if not current_exercise:
                     current_exercise = "Exercícios Diversos"
-                exercises_html += f"• {line}<br>"
+                exercises_html += f"• {{line}}<br>"
         
         # Adiciona o último exercício processado
         if current_exercise:
-            exercises_html += f"<strong>{current_exercise}</strong><br>"
+            exercises_html += f"<strong>{{current_exercise}}</strong><br>"
 
         details.append(f"""
 <div class="training-detail manter-junto">
