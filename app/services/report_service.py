@@ -427,7 +427,7 @@ def _build_main_metrics_grid(avg_cals, avg_prot, avg_carbs, avg_fats, prot_goal,
 
             <div class="metric-value">{avg_carbs:.0f}g</div>
 
-            <div class="metric-comparison">{avg_carbs*4/avg_cals*100 if avg_cals > 0 else 0:.0f}% das calorias totais</div>
+            <div class="metric-comparison">{{avg_carbs*4/avg_cals*100 if avg_cals > 0 else 0:.0f}}% das calorias totais</div>
 
         </div>
 
@@ -437,11 +437,11 @@ def _build_main_metrics_grid(avg_cals, avg_prot, avg_carbs, avg_fats, prot_goal,
 
             <div class="metric-value">{avg_fats:.0f}g</div>
 
-            <div class="metric-comparison">{avg_fats*9/avg_cals*100 if avg_cals > 0 else 0:.0f}% das calorias totais</div>
+            <div class="metric-comparison">{{avg_fats*9/avg_cals*100 if avg_cals > 0 else 0:.0f}}% das calorias totais</div>
 
         </div>
 
-    </div>""
+    </div>"""
 
 def _build_consistency_metrics_grid(cv, days_on_goal, total_days) -> str:
     return f"""
@@ -455,9 +455,9 @@ def _build_consistency_metrics_grid(cv, days_on_goal, total_days) -> str:
         <div class="metric-item">
             <div class="metric-label">Dias na Meta Proteica</div>
             <div class="metric-value">{days_on_goal}/{total_days}</div>
-            <div class="metric-comparison"><span class="positive">{days_on_goal/total_days*100 if total_days > 0 else 0:.0f}% de aderência</span></div>
+            <div class="metric-comparison"><span class="positive">{{days_on_goal/total_days*100 if total_days > 0 else 0:.0f}}% de aderência</span></div>
         </div>
-    </div>""
+    </div>"""
 
 def _build_daily_nutrition_table(checkins: list, macro_goals: dict) -> str:
     rows = []
@@ -516,7 +516,7 @@ def _build_daily_nutrition_table(checkins: list, macro_goals: dict) -> str:
             status_class = "warning"
 
         rows.append(f"""
-<tr>
+t<tr>
             <td>{date}</td>
             <td>{current_calories} kcal</td>
             <td>{current_protein}g</td>
@@ -533,7 +533,7 @@ def _build_daily_nutrition_table(checkins: list, macro_goals: dict) -> str:
         <tbody>
             {table_rows}
         </tbody>
-    </table>""
+    </table>"""
 
 def _parse_previous_week_metrics(past_reports: list) -> dict:
     if not past_reports: return {}
@@ -585,7 +585,7 @@ t<tr>
         <tbody>
             {table_rows}
         </tbody>
-    </table>""
+    </table>"""
 
 async def _build_training_analysis_section(checkins: list, chained_context: str, student_name: str, total_sessions_expected: int) -> str:
     training_checkins = [c for c in checkins if c.get('training', {}).get('training_journal', '').strip().lower() not in ('', 'não treinei hoje')]
