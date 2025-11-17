@@ -516,7 +516,7 @@ def _build_daily_nutrition_table(checkins: list, macro_goals: dict) -> str:
             status_class = "warning"
 
         rows.append(f"""
-t<tr>
+tr>
             <td>{date}</td>
             <td>{current_calories} kcal</td>
             <td>{current_protein}g</td>
@@ -569,7 +569,7 @@ def _build_daily_sleep_table(checkins: list) -> str:
         status = "Adequado" if s.get('sleep_duration_hours', 0) >= 7 else "Limite inferior"
         status_class = "positive" if status == "Adequado" else "warning"
         rows.append(f"""
-t<tr>
+tr>
             <td>{date}</td>
             <td>{s.get('sleep_duration_hours', 0):.1f}h</td>
             <td>{s.get('sleep_quality_rating', 0)}/5</td>
