@@ -55,6 +55,12 @@ def _infer_training_sessions_per_week(historical_checkins: list) -> int:
         return 5
 
     max_sessions = max(trainings_per_week.values())
+    
+    # Adiciona um teto de 5, pois é a divisão máxima padrão
+    if max_sessions > 5:
+        logger.warning(f"Inferred training split of {max_sessions} is higher than the standard max. Capping at 5.")
+        return 5
+
     logger.info(f"Inferred training split: {max_sessions} sessions per week based on historical maximum.")
     return max_sessions
 
